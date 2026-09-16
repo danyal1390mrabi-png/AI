@@ -1,0 +1,2264 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>دستیار صورتی</title>
+<meta name="description" content="دستیار چت هوش مصنوعی فارسی - دستیار صورتی">
+
+<script>
+// جلوگیری از پرش تم هنگام بارگذاری صفحه: تم ذخیره‌شده را قبل از رندر اعمال می‌کنیم
+(function(){
+  try{
+    var t = localStorage.getItem("danyalcode_ai_theme");
+    document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+  }catch(e){
+    document.documentElement.setAttribute("data-theme", "dark");
+  }
+})();
+</script>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#24121c">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="دستیار صورتی">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --radius-lg:18px;
+    --radius-md:12px;
+    --radius-sm:8px;
+    --success:#2ecc71;
+    --error:#ff5470;
+    --warning:#ffb02e;
+  }
+
+  html[data-theme="dark"]{
+    --bg:#212121;
+    --sidebar-bg:#24121c;
+    --surface:#2f2f2f;
+    --surface-2:#3a3a3a;
+    --surface-hover:#3a3a3a;
+    --border:#3a3a3a;
+    --text-1:#ececec;
+    --text-2:#b4b4b4;
+    --text-3:#8e8ea0;
+    --accent:#ec4899;
+    --user-bubble:#2f2f2f;
+    --danger:#ff5470;
+    --overlay:rgba(0,0,0,.6);
+    --inverse:#fff;
+  }
+  html[data-theme="light"]{
+    --bg:#ffffff;
+    --sidebar-bg:#fef0f6;
+    --surface:#f7f7f8;
+    --surface-2:#ececec;
+    --surface-hover:#e9e9e9;
+    --border:#e5e5e5;
+    --text-1:#0d0d0d;
+    --text-2:#5d5d5d;
+    --text-3:#8e8ea0;
+    --accent:#ec4899;
+    --user-bubble:#f0f0f1;
+    --danger:#e5484d;
+    --overlay:rgba(0,0,0,.3);
+    --inverse:#fff;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+
+  body{
+    font-family:'Vazirmatn', Tahoma, sans-serif;
+    background:var(--bg);
+    color:var(--text-1);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    transition:background .2s ease, color .2s ease;
+  }
+
+  /* ---------- Top bar ---------- */
+  .top-bar{ width:100%; height:1cm; background:var(--sidebar-bg); flex-shrink:0; }
+
+  /* ---------- Page switch (سوییچ بین صفحات هوش مصنوعی) ---------- */
+  .page-switch{ padding:2px 12px 8px; display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+  .page-switch-label{ font-size:11px; color:var(--text-3); padding:0 2px; }
+  .page-switch-link{
+    display:flex; align-items:center; justify-content:center; white-space:nowrap;
+    padding:8px 10px; border-radius:10px; font-size:12.5px; font-weight:700;
+    color:var(--text-2); text-decoration:none; border:1px solid var(--border);
+    transition:.2s; font-family:inherit;
+  }
+  .page-switch-link:hover{ background:var(--surface-hover); color:var(--text-1); }
+  .page-switch-link.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+
+  /* ---------- App shell: sidebar + main column ---------- */
+  .app-shell{ flex:1; min-height:0; display:flex; overflow:hidden; position:relative; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:260px; flex-shrink:0; background:var(--sidebar-bg);
+    display:flex; flex-direction:column;
+    border-inline-start:1px solid var(--border);
+    transition:width .2s ease;
+    overflow:hidden;
+  }
+  body.sidebar-closed .sidebar{ width:0; border:none; }
+
+  .sidebar-brand{ display:flex; align-items:center; gap:8px; padding:14px 14px 4px; flex-shrink:0; }
+  .sidebar-logo{ width:24px; height:24px; border-radius:7px; object-fit:cover; flex-shrink:0; }
+  .sidebar-brand span{ font-size:13px; font-weight:700; color:var(--text-1); white-space:nowrap; }
+
+  .new-chat-btn{
+    margin:10px 12px; padding:10px 14px;
+    border:1px solid var(--border); border-radius:12px;
+    background:transparent; color:var(--text-1);
+    display:flex; align-items:center; gap:8px; cursor:pointer;
+    font-family:inherit; font-size:13.5px; font-weight:600;
+    flex-shrink:0; white-space:nowrap;
+  }
+  .new-chat-btn:hover{ background:var(--surface-hover); }
+  .new-chat-btn svg{ width:16px; height:16px; flex-shrink:0; }
+
+  .conv-list{ flex:1; overflow-y:auto; padding:2px 8px 8px; display:flex; flex-direction:column; gap:2px; }
+  .conv-item{
+    display:flex; align-items:center; gap:8px; padding:9px 10px;
+    border-radius:10px; cursor:pointer; color:var(--text-2); font-size:13px;
+  }
+  .conv-item:hover{ background:var(--surface-hover); color:var(--text-1); }
+  .conv-item.active{ background:var(--surface); color:var(--text-1); }
+  .conv-title-text{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .conv-delete{
+    opacity:0; width:22px; height:22px; border-radius:6px; border:none;
+    background:transparent; display:flex; align-items:center; justify-content:center;
+    color:var(--text-3); flex-shrink:0; cursor:pointer;
+  }
+  .conv-item:hover .conv-delete{ opacity:1; }
+  .conv-delete:hover{ background:rgba(255,84,112,.15); color:var(--danger); }
+  .conv-delete svg{ width:14px; height:14px; }
+  .conv-empty{ padding:16px 12px; font-size:12px; color:var(--text-3); text-align:center; }
+
+  .sidebar-footer{ padding:8px; border-top:1px solid var(--border); flex-shrink:0; }
+  .sidebar-footer-btn{
+    width:100%; display:flex; align-items:center; gap:10px;
+    padding:9px 10px; border-radius:10px; background:transparent; border:none;
+    color:var(--text-2); cursor:pointer; font-family:inherit; font-size:13px; text-align:start;
+  }
+  .sidebar-footer-btn:hover{ background:var(--surface-hover); color:var(--text-1); }
+  .sidebar-footer-btn svg{ width:16px; height:16px; flex-shrink:0; }
+
+  .sidebar-backdrop{ display:none; }
+
+  /* ---------- Main column ---------- */
+  .main-col{ flex:1; min-width:0; display:flex; flex-direction:column; height:100%; background:var(--bg); }
+
+  .main-header{
+    display:flex; align-items:center; gap:10px; padding:10px 16px;
+    border-bottom:1px solid var(--border); flex-shrink:0;
+  }
+  .conv-title{
+    font-size:14px; font-weight:700; color:var(--text-1); flex:1;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+
+  .status-pill{
+    display:flex; align-items:center; gap:5px;
+    font-size:10.5px; color:var(--text-2);
+    padding:4px 8px; border:1px solid var(--border); border-radius:999px; background:var(--surface);
+    flex-shrink:0;
+  }
+  .status-dot{ width:7px; height:7px; border-radius:50%; background:var(--success); flex-shrink:0; transition:background .25s; }
+  .status-dot.error{ background:var(--error); }
+  .status-dot.busy{ background:var(--warning); }
+
+  .icon-btn{
+    width:32px; height:32px; border-radius:var(--radius-sm);
+    border:1px solid var(--border); background:var(--surface); color:var(--text-2);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.2s;
+    flex-shrink:0;
+  }
+  .icon-btn:hover{ background:var(--surface-hover); color:var(--text-1); }
+  .icon-btn svg{ width:16px; height:16px; }
+
+  /* ---------- Chat stream ---------- */
+  .chat-scroll{ flex:1; min-height:0; overflow-y:auto; }
+  .chat-inner{ max-width:760px; margin:0 auto; padding:24px 16px 30px; display:flex; flex-direction:column; }
+
+  .empty-state{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:22px; padding:60px 16px; text-align:center; min-height:50vh;
+  }
+  .empty-state h2{ font-size:21px; font-weight:700; color:var(--text-1); }
+  .empty-state p{ font-size:13px; color:var(--text-3); max-width:420px; }
+
+  .suggestions{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:600px; }
+  .suggestion-chip{
+    background:var(--surface); border:1px solid var(--border); color:var(--text-2);
+    padding:8px 14px; border-radius:999px; font-size:12.5px; cursor:pointer;
+    font-family:inherit; transition:.2s;
+  }
+  .suggestion-chip:hover{ background:var(--surface-hover); color:var(--text-1); border-color:var(--accent); }
+
+  .msg-block{ display:flex; gap:14px; margin-bottom:26px; align-items:flex-start; }
+  .msg-block.user{ justify-content:flex-end; }
+  .msg-bubble{
+    background:var(--user-bubble); color:var(--text-1); padding:10px 16px;
+    border-radius:20px; max-width:80%; white-space:pre-wrap; overflow-wrap:anywhere;
+    line-height:1.8; font-size:15px;
+  }
+  .msg-block.assistant .avatar{
+    width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;
+    flex-shrink:0; margin-top:2px;
+  }
+  .msg-content{ flex:1; min-width:0; }
+  .msg-text{ font-size:15.5px; line-height:1.95; color:var(--text-1); }
+  .msg-actions{ display:flex; gap:4px; margin-top:8px; }
+  .msg-action-btn{
+    width:28px; height:28px; border-radius:8px; border:none; background:transparent;
+    color:var(--text-3); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .msg-action-btn:hover{ background:var(--surface-hover); color:var(--text-1); }
+  .msg-action-btn.copied{ color:var(--accent); }
+  .msg-action-btn svg{ width:15px; height:15px; }
+
+  .typing-status{ display:flex; align-items:center; gap:8px; color:var(--text-3); font-size:13.5px; padding-top:4px; }
+  .typing-status .dot{ width:6px; height:6px; border-radius:50%; background:var(--text-2); animation:blink 1.2s infinite ease-in-out; }
+  .typing-status .dot:nth-child(2){ animation-delay:.2s; }
+  .typing-status .dot:nth-child(3){ animation-delay:.4s; }
+  @keyframes blink{ 0%,80%,100%{ opacity:.25; transform:scale(.85);} 40%{ opacity:1; transform:scale(1);} }
+  .typing-label{ font-size:12.5px; }
+
+  /* ---------- Markdown ---------- */
+  .md-p{ margin:0 0 12px; }
+  .md-p:last-child{ margin-bottom:0; }
+  .md-h{ color:var(--text-1); font-weight:700; line-height:1.6; margin:18px 0 10px; }
+  .md-h:first-child{ margin-top:0; }
+  h2.md-h{ font-size:19px; }
+  h3.md-h{ font-size:17px; }
+  h4.md-h{ font-size:15.5px; color:var(--text-2); }
+  .msg-text strong, .msg-text b{ color:var(--text-1); font-weight:700; }
+  .msg-text em, .msg-text i{ color:var(--text-1); font-style:italic; }
+  .md-list{ margin:0 0 12px; padding-inline-start:22px; display:flex; flex-direction:column; gap:6px; }
+  .md-list li{ line-height:1.9; }
+  .md-inline-code{
+    background:var(--surface-hover); border:1px solid var(--border); color:#ffb454;
+    padding:1px 6px; border-radius:6px; font-size:.9em; direction:ltr; display:inline-block;
+    font-family:'Courier New', monospace;
+  }
+  .md-link{ color:var(--accent); text-decoration:underline; text-underline-offset:3px; }
+  .md-link:hover{ opacity:.85; }
+
+  /* ---------- Code blocks (ChatGPT-style, with copy button) ---------- */
+  .code-block{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
+    margin:0 0 14px; overflow:hidden;
+  }
+  .code-block-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:7px 12px; background:var(--surface-2); border-bottom:1px solid var(--border); direction:ltr;
+  }
+  .code-lang{ font-size:11px; color:var(--text-3); font-family:'Courier New', monospace; }
+  .code-copy-btn{
+    display:flex; align-items:center; gap:5px; background:transparent; border:none;
+    color:var(--text-2); font-size:11.5px; font-family:inherit; cursor:pointer; padding:3px 6px; border-radius:6px;
+  }
+  .code-copy-btn:hover{ background:var(--surface-hover); color:var(--text-1); }
+  .code-copy-btn.copied{ color:var(--accent); }
+  .code-copy-btn svg{ width:13px; height:13px; }
+  .md-code{ margin:0; border:none; border-radius:0; background:transparent; padding:14px; overflow-x:auto; direction:ltr; text-align:left; }
+  .md-code code{
+    font-family:'Courier New', monospace; font-size:13px; line-height:1.7; color:var(--text-1);
+    white-space:pre; background:transparent; border:none; padding:0;
+  }
+
+  /* ---------- Input area ---------- */
+  .input-area{ display:flex; justify-content:center; padding:10px 16px 16px; flex-shrink:0; background:var(--bg); }
+  .input-box{
+    width:100%; max-width:760px; display:flex; align-items:flex-end; gap:8px;
+    background:var(--surface); border:1px solid var(--border); border-radius:26px;
+    padding:8px 8px 8px 14px; transition:border-color .2s;
+  }
+  .input-box:focus-within{ border-color:var(--accent); }
+
+  #messageInput{
+    flex:1; background:transparent; border:none; outline:none; resize:none;
+    color:var(--text-1); font-family:inherit; font-size:14.5px; line-height:1.7;
+    max-height:160px; padding:8px 6px;
+  }
+  #messageInput::placeholder{ color:var(--text-3); }
+
+  .send-btn{
+    width:36px; height:36px; border-radius:50%; border:none;
+    background:var(--text-1); color:var(--bg);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+    transition:.2s;
+  }
+  .send-btn:hover{ opacity:.85; }
+  .send-btn:disabled{ opacity:.3; cursor:not-allowed; }
+  .send-btn svg{ width:17px; height:17px; }
+
+  .input-hint{ text-align:center; font-size:11px; color:var(--text-3); max-width:760px; margin:8px auto 0; }
+
+  /* ---------- Attach (عکس/فایل) ---------- */
+  .attach-btn{
+    width:36px; height:36px; border-radius:50%; border:none;
+    background:transparent; color:var(--text-2);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+    transition:.2s;
+  }
+  .attach-btn:hover{ background:var(--surface-hover); color:var(--text-1); }
+  .attach-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .attach-btn svg{ width:19px; height:19px; }
+
+  .attach-preview-row{
+    width:100%; max-width:760px; margin:0 auto 8px; display:none;
+    flex-direction:column; gap:6px;
+  }
+  .attach-preview-row.active{ display:flex; }
+  .attach-chip{
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
+    padding:8px 10px; max-width:100%;
+  }
+  .attach-chip-thumb{
+    width:38px; height:38px; border-radius:8px; object-fit:cover; flex-shrink:0; background:var(--surface-2);
+  }
+  .attach-chip-file-icon{
+    width:38px; height:38px; border-radius:8px; background:var(--surface-2); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:var(--text-2); font-size:11px; font-weight:800;
+  }
+  .attach-chip-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .attach-chip-name{ font-size:12.5px; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .attach-chip-status{ font-size:11px; color:var(--text-3); }
+  .attach-chip-remove{
+    width:26px; height:26px; border-radius:50%; border:none; background:transparent; color:var(--text-2);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+  }
+  .attach-chip-remove:hover{ background:var(--surface-hover); color:var(--error); }
+  .attach-chip-remove svg{ width:15px; height:15px; }
+  .attach-error-text{ font-size:11.5px; color:var(--error); padding:0 4px; }
+
+  /* پیوستِ نمایش‌داده‌شده داخل حباب پیام کاربر */
+  .msg-attach-image{
+    display:block; max-width:220px; max-height:220px; border-radius:var(--radius-md);
+    margin-bottom:8px; object-fit:cover;
+  }
+  .msg-attach-file{
+    display:flex; align-items:center; gap:8px; background:rgba(0,0,0,.12);
+    border-radius:var(--radius-md); padding:7px 10px; margin-bottom:8px; font-size:12.5px;
+  }
+  .msg-attach-file svg{ width:16px; height:16px; flex-shrink:0; }
+
+  /* تصویر تولیدشده توسط هوش مصنوعی (اکشن image) */
+  .msg-generated-image-wrap{ margin-bottom:10px; }
+  .msg-generated-image{
+    display:block; max-width:100%; width:320px; max-width:100%; border-radius:var(--radius-md);
+    border:1px solid var(--border);
+  }
+  .msg-generated-image-download{
+    display:inline-flex; align-items:center; gap:6px; margin-top:8px;
+    font-size:12.5px; color:var(--text-2); text-decoration:none;
+    border:1px solid var(--border); border-radius:var(--radius-md); padding:6px 12px;
+    transition:.2s;
+  }
+  .msg-generated-image-download:hover{ background:var(--surface-hover); color:var(--text-1); }
+
+  .voice-mode-btn{
+    width:36px; height:36px; border-radius:50%; border:none;
+    background:transparent; color:var(--text-2);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+    transition:.2s;
+  }
+  .voice-mode-btn:hover{ background:var(--surface-hover); color:var(--text-1); }
+  .voice-mode-btn svg{ width:19px; height:19px; }
+
+  /* ---------- Voice mode overlay ---------- */
+  .voice-overlay{
+    position:fixed; inset:0; z-index:600; background:var(--bg);
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:26px; padding:24px; text-align:center;
+  }
+  .voice-overlay.active{ display:flex; }
+  .voice-orb{
+    width:140px; height:140px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--accent), #9d174d 75%);
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    transition:transform .2s ease, background .3s ease;
+  }
+  .voice-orb svg{ width:50px; height:50px; }
+  .voice-orb.listening{ animation:voicePulse 1.6s ease-in-out infinite; }
+  .voice-orb.thinking{ background:conic-gradient(var(--accent), var(--surface-2)); animation:voiceSpin 1s linear infinite; }
+  .voice-orb.speaking{ animation:voiceBounce .45s ease-in-out infinite alternate; }
+  .voice-orb.error{ background:var(--danger); animation:none; }
+  @keyframes voicePulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(16,163,127,.35); transform:scale(1); }
+    50%{ box-shadow:0 0 0 24px rgba(16,163,127,0); transform:scale(1.06); }
+  }
+  @keyframes voiceSpin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  @keyframes voiceBounce{ from{ transform:scale(1); } to{ transform:scale(1.09); } }
+
+  .voice-status-text{ font-size:15px; font-weight:700; color:var(--text-1); }
+  .voice-transcript{
+    max-width:540px; min-height:26px; color:var(--text-2);
+    font-size:13.5px; line-height:1.8; white-space:pre-wrap; overflow-wrap:anywhere;
+  }
+  .voice-close-btn{
+    width:54px; height:54px; border-radius:50%; background:var(--surface);
+    color:var(--text-1); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; border:1px solid var(--border); margin-top:8px;
+  }
+  .voice-close-btn:hover{ background:var(--surface-hover); }
+  .voice-close-btn svg{ width:22px; height:22px; }
+
+  /* ---------- Keyboard spacer ---------- */
+  .keyboard-space{
+    width:100%; height:0; min-height:0; flex-shrink:0; background:transparent;
+    transition:height .25s ease, min-height .25s ease;
+  }
+  .keyboard-space.expanded{ height:34vh; min-height:220px; }
+
+  /* ---------- VPN badge ---------- */
+  .vpn-badge{
+    position:fixed; bottom:14px; left:14px; z-index:50;
+    display:flex; align-items:center; gap:6px;
+    background:rgba(255,176,46,.12); border:1px solid var(--warning); color:var(--warning);
+    font-size:11px; font-weight:700; padding:6px 10px; border-radius:999px;
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
+    animation:vpnPulse 2s infinite ease-in-out;
+  }
+  .vpn-badge svg{ width:14px; height:14px; flex-shrink:0; }
+  @keyframes vpnPulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(255,176,46,.35); }
+    50%{ box-shadow:0 0 0 6px rgba(255,176,46,0); }
+  }
+
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover{ background:var(--surface-hover); }
+
+  /* ---------- AFK overlay ---------- */
+  #afkOverlay{
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background:var(--overlay); backdrop-filter:blur(12px);
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    z-index:1000; animation:afkFadeIn .4s ease; text-align:center;
+  }
+  @keyframes afkFadeIn{ from{ opacity:0; } to{ opacity:1; } }
+  #afkOverlay .afk-icon{ font-size:60px; margin-bottom:20px; }
+  #afkOverlay h2{ font-size:26px; font-weight:800; color:var(--text-1); margin-bottom:8px; }
+  #afkOverlay p{ color:var(--text-3); font-size:14px; }
+
+  /* ---------- Mobile: sidebar becomes an off-canvas overlay ---------- */
+  @media (max-width:768px){
+    .sidebar{
+      position:fixed; top:1cm; bottom:0; right:0; width:280px; z-index:210;
+      box-shadow:-8px 0 24px rgba(0,0,0,.35); transform:translateX(0); transition:transform .25s ease;
+    }
+    body.sidebar-closed .sidebar{ width:280px; transform:translateX(100%); border:none; }
+    .sidebar-backdrop{
+      display:none; position:fixed; inset:1cm 0 0 0; background:rgba(0,0,0,.5); z-index:200;
+    }
+    body:not(.sidebar-closed) .sidebar-backdrop{ display:block; }
+    .conv-title{ font-size:13px; }
+  }
+</style>
+</head>
+<body class="sidebar-closed">
+
+<div class="top-bar"></div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="icons/icon-192.png" class="sidebar-logo" alt="لوگو">
+      <span>دستیار صورتی</span>
+    </div>
+
+    <div class="page-switch" id="pageSwitch"></div>
+
+    <button class="new-chat-btn" id="newChatBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+      گفتگوی جدید
+    </button>
+
+    <div class="conv-list" id="convList"></div>
+
+    <div class="sidebar-footer">
+      <button class="sidebar-footer-btn" id="themeToggleBtn" type="button" title="تغییر تم">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <span id="themeToggleLabel">تم روشن</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <div class="main-col">
+    <header class="main-header">
+      <button class="icon-btn" id="sidebarToggleBtn" title="نمایش/پنهان‌کردن گفتگوها">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
+      </button>
+      <div class="conv-title" id="convTitle">گفتگوی جدید</div>
+      <div class="status-pill">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">آماده</span>
+      </div>
+      <button class="icon-btn" id="deleteConvBtn" title="حذف این گفتگو">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      </button>
+    </header>
+
+    <main class="chat-scroll" id="chatScroll">
+      <div class="chat-inner" id="chatInner"></div>
+    </main>
+
+    <div class="input-area">
+      <div style="width:100%; max-width:760px;">
+        <div class="attach-preview-row" id="attachPreviewRow"></div>
+        <input type="file" id="attachInput" accept=".jpg,.jpeg,.png,.webp,.pdf,.txt,.csv,.json,.docx,.xlsx,image/jpeg,image/png,image/webp,application/pdf,text/plain,text/csv,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;">
+        <div class="input-box">
+          <button class="attach-btn" id="attachBtn" type="button" title="پیوست عکس یا فایل">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg>
+          </button>
+          <button class="voice-mode-btn" id="voiceModeBtn" type="button" title="حالت مکالمه صوتی">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 19v4"/><path d="M8 23h8"/></svg>
+          </button>
+          <textarea id="messageInput" rows="1" placeholder="پیام خود را بنویسید... (Enter برای ارسال، Shift+Enter برای خط جدید)"></textarea>
+          <button class="send-btn" id="sendBtn" title="ارسال">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+        <p class="input-hint">هوش مصنوعی شرکت دانیال کد قبل از پاسخ، اینترنت را جستجو می‌کند. ممکن است اشتباه کند؛ پاسخ‌ها را بررسی کنید.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="keyboard-space" id="keyboardSpace"></div>
+
+<div id="afkOverlay">
+  <div class="afk-icon">🌙</div>
+  <h2>حالت استراحت (AFK)</h2>
+  <p>سیستم به دلیل عدم فعالیت در حالت استراحت است.<br>برای بازگشت، ماوس را حرکت دهید یا کلیدی فشار دهید.</p>
+</div>
+
+<div class="voice-overlay" id="voiceOverlay">
+  <div class="voice-orb" id="voiceOrb">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 19v4"/><path d="M8 23h8"/></svg>
+  </div>
+  <div class="voice-status-text" id="voiceStatusText">در حال آماده‌سازی میکروفون...</div>
+  <div class="voice-transcript" id="voiceTranscript"></div>
+  <button class="voice-close-btn" id="voiceCloseBtn" type="button" title="خروج از حالت صوتی">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
+  </button>
+</div>
+
+<div class="vpn-badge">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+  <span>VPN سرعت ییشتر بهبود کیفیت</span>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     منوی بالای صفحه
+     برای تغییر نام یا ترتیب صفحات، فقط همین لیست را ویرایش کنید.
+     "href" باید دقیقاً نام فایل صفحه‌ی موردنظر باشد.
+     ========================================================= */
+  const PAGE_MENU = [
+    { label: "رفتن به دستیار کمک قوی",     href: "index.html" },
+    { label: "رفتن به دستیار همیار",    href: "page2.html" },
+    { label: "رفتن به دستیار سارا",   href: "page3.html" },
+    { label: "رفتن به دستیار دانیال", href: "page4.html" },
+    { label: "دستیار ناز",  href: "page5.html" }
+  ];
+  const CURRENT_PAGE = "page5.html"; // نام فایل همین صفحه
+
+  function renderTopMenu(){
+    const box = document.getElementById("pageSwitch");
+    if(!box) return;
+    const links = PAGE_MENU.map(item => {
+      const isActive = item.href === CURRENT_PAGE;
+      return `<a class="page-switch-link${isActive ? " active" : ""}" href="${item.href}">${item.label}</a>`;
+    }).join("");
+    box.innerHTML = `<div class="page-switch-label">تغییر هوش مصنوعی</div>${links}`;
+  }
+
+  /* =========================================================
+     تنظیمات اتصال به هوش مصنوعی + جستجوی اینترنتی
+     ========================================================= */
+
+  const CONFIG = {
+    endpoint: "https://apis.danyalcode.ir/",
+    maxTokens: 8000,
+    systemPrompt: `# هویت
+   # تو کی هستی 
+   تو یک دستیار نازی همش ناز میکنی و سوالات عجیب میگی`,
+
+
+    searchEndpoint: "https://super-sound-5676.danyal1390mrabi.workers.dev/",
+    searchResultCount: 5
+  };
+
+  /* =========================================================
+     تنظیمات پیوست (عکس / فایل)
+     ========================================================= */
+  const ATTACH_IMAGE_TYPES = { "image/jpeg":1, "image/jpg":1, "image/png":1, "image/webp":1 };
+  const ATTACH_IMAGE_EXTS = { jpg:1, jpeg:1, png:1, webp:1 };
+  const ATTACH_FILE_TYPES = {
+    "application/pdf":"pdf",
+    "text/plain":"txt",
+    "text/csv":"csv",
+    "application/vnd.ms-excel":"csv",
+    "application/json":"json",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document":"docx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":"xlsx"
+  };
+  const ATTACH_FILE_EXTS = { pdf:1, txt:1, csv:1, json:1, docx:1, xlsx:1 };
+  const ATTACH_MAX_IMAGE_BYTES = 6 * 1024 * 1024;
+  const ATTACH_MAX_FILE_BYTES = 8 * 1024 * 1024;
+
+  let pendingAttachment = null; // { file, kind: 'image'|'file', thumb? }
+
+
+  /* ---------------- Storage keys ----------------
+     هر دستیار (هر صفحه) حافظه‌ی گفتگوی جداگانه‌ی خودش را دارد؛
+     به همین دلیل کلیدهای ذخیره‌سازی بر اساس CURRENT_PAGE نام‌گذاری می‌شوند
+     تا گفتگوهای دستیارهای مختلف با هم قاطی نشوند. */
+  const LS_CONVS   = "danyalcode_ai_conversations_v2__" + CURRENT_PAGE;
+  const LS_THEME   = "danyalcode_ai_theme";
+  const LS_CHAT_OLD = "danyalcode_ai_chat_history"; // فقط برای مهاجرتِ نسخه‌ی خیلی قدیمی‌تر (تک‌گفتگویی)
+
+  /* ---------------- State ---------------- */
+  let conversations = [];   // گفتگوهای ذخیره‌شده‌ی این دستیار (برای نمایش در منوی گفتگوها)
+  let currentConv = null;   // گفتگوی فعال؛ تا وقتی پیامی ثبت نشده، در «conversations» ذخیره نمی‌شود
+  let isBusy = false;
+
+  /* ---------------- DOM refs ---------------- */
+  const sidebarEl = document.getElementById("sidebar");
+  const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+  const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+  const newChatBtn = document.getElementById("newChatBtn");
+  const convListEl = document.getElementById("convList");
+  const convTitleEl = document.getElementById("convTitle");
+  const deleteConvBtn = document.getElementById("deleteConvBtn");
+  const themeToggleBtn = document.getElementById("themeToggleBtn");
+  const themeToggleLabel = document.getElementById("themeToggleLabel");
+
+  const chatScrollEl = document.getElementById("chatScroll");
+  const chatInnerEl = document.getElementById("chatInner");
+  const messageInput = document.getElementById("messageInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const attachBtn = document.getElementById("attachBtn");
+  const attachInput = document.getElementById("attachInput");
+  const attachPreviewRow = document.getElementById("attachPreviewRow");
+  const statusDot = document.getElementById("statusDot");
+  const statusText = document.getElementById("statusText");
+  const keyboardSpace = document.getElementById("keyboardSpace");
+  const voiceModeBtn = document.getElementById("voiceModeBtn");
+  const voiceOverlay = document.getElementById("voiceOverlay");
+  const voiceOrb = document.getElementById("voiceOrb");
+  const voiceStatusText = document.getElementById("voiceStatusText");
+  const voiceTranscriptEl = document.getElementById("voiceTranscript");
+  const voiceCloseBtn = document.getElementById("voiceCloseBtn");
+
+  /* ---------------- Icons ---------------- */
+  const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+  const COPY_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  const FILE_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
+  const SUN_ICON   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
+  const MOON_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
+  /* ---------------- Init ---------------- */
+  function init(){
+    renderTopMenu();
+    loadConversations();
+    checkConfigWarning();
+    initTheme();
+    initSidebarResponsiveState();
+    bindEvents();
+    renderSidebar();
+    renderChat();
+    autoResize();
+  }
+
+  function checkConfigWarning(){
+    if(!CONFIG.endpoint || CONFIG.endpoint.includes("PASTE_YOUR_WORKER_URL_HERE")){
+      setErrorStatus("موقتاً در دسترس نیست");
+    }
+  }
+
+  /* ---------------- Conversations: persistence ---------------- */
+  function genId(){
+    return "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function createEmptyConv(){
+    const now = Date.now();
+    return { id: genId(), title: "گفتگوی جدید", messages: [], createdAt: now, updatedAt: now };
+  }
+
+  function deriveTitle(msgs){
+    const firstUser = msgs.find(m => m.role === "user");
+    if(!firstUser) return "گفتگوی جدید";
+    const t = firstUser.content.trim().replace(/\s+/g, " ");
+    return t.length > 42 ? t.slice(0, 42) + "…" : t;
+  }
+
+  function loadConversations(){
+    try{
+      const raw = localStorage.getItem(LS_CONVS);
+      if(raw) conversations = JSON.parse(raw);
+    }catch(e){ conversations = []; }
+    if(!Array.isArray(conversations)) conversations = [];
+
+    // هرگز گفتگوی خالی را در تاریخچه نگه نمی‌داریم (پاک‌سازی داده‌های احتمالاً خراب/قدیمی)
+    conversations = conversations.filter(c => c && Array.isArray(c.messages) && c.messages.length > 0);
+
+    // مهاجرت از نسخه‌ی خیلی قدیمی‌تر (تک‌گفتگویی) — فقط یک‌بار و فقط برای صفحه‌ی اصلی
+    if(CURRENT_PAGE === "index.html" && conversations.length === 0){
+      try{
+        const oldRaw = localStorage.getItem(LS_CHAT_OLD);
+        if(oldRaw){
+          const oldMessages = JSON.parse(oldRaw);
+          if(Array.isArray(oldMessages) && oldMessages.length){
+            conversations.push({
+              id: genId(),
+              title: deriveTitle(oldMessages),
+              messages: oldMessages,
+              createdAt: Date.now(),
+              updatedAt: Date.now()
+            });
+          }
+        }
+        localStorage.removeItem(LS_CHAT_OLD);
+      }catch(e){}
+    }
+
+    saveConversations();
+
+    // هر بار که این دستیار باز می‌شود، همیشه با یک صفحه‌ی گفتگوی خالی و تازه شروع می‌کنیم؛
+    // گفتگوهای قبلی حذف نمی‌شوند و در منوی «گفتگوها»ی همین دستیار باقی می‌مانند.
+    currentConv = createEmptyConv();
+  }
+
+  function saveConversations(){
+    try{
+      localStorage.setItem(LS_CONVS, JSON.stringify(conversations));
+    }catch(e){}
+  }
+
+  function getCurrentConv(){
+    return currentConv;
+  }
+
+  function newConversation(){
+    currentConv = createEmptyConv();
+    renderSidebar();
+    renderChat();
+    closeSidebarOnMobile();
+    messageInput.focus();
+  }
+
+  function switchConversation(id){
+    const conv = conversations.find(c => c.id === id);
+    if(!conv) return;
+    if(!currentConv || conv.id !== currentConv.id){
+      currentConv = conv;
+      renderSidebar();
+      renderChat();
+    }
+    closeSidebarOnMobile();
+  }
+
+  function deleteConversation(id, evt){
+    if(evt) evt.stopPropagation();
+    if(!confirm("این گفتگو برای همیشه حذف شود؟")) return;
+    const wasCurrent = currentConv && currentConv.id === id;
+    conversations = conversations.filter(c => c.id !== id);
+    saveConversations();
+    if(wasCurrent){
+      currentConv = createEmptyConv();
+    }
+    renderSidebar();
+    renderChat();
+  }
+
+  function addMessage(role, content, attachment){
+    const conv = getCurrentConv();
+    const m = { role, content, time: Date.now() };
+    if(attachment) m.attachment = attachment;
+    conv.messages.push(m);
+    conv.updatedAt = Date.now();
+    if(role === "user" && conv.title === "گفتگوی جدید"){
+      conv.title = deriveTitle(conv.messages);
+    }
+    // اولین پیام این گفتگو ثبت شد؛ از این به بعد در تاریخچه (منوی گفتگوها) نمایش داده شود
+    if(!conversations.some(c => c.id === conv.id)){
+      conversations.push(conv);
+    }
+    saveConversations();
+    return m;
+  }
+
+  /* ---------------- Sidebar / responsive ---------------- */
+  function isMobile(){ return window.innerWidth <= 768; }
+
+  function initSidebarResponsiveState(){
+    if(!isMobile()) document.body.classList.remove("sidebar-closed");
+  }
+
+  function openSidebar(){ document.body.classList.remove("sidebar-closed"); }
+  function closeSidebar(){ document.body.classList.add("sidebar-closed"); }
+  function toggleSidebar(){ document.body.classList.toggle("sidebar-closed"); }
+  function closeSidebarOnMobile(){ if(isMobile()) closeSidebar(); }
+
+  function renderSidebar(){
+    convListEl.innerHTML = "";
+    if(conversations.length === 0){
+      const empty = document.createElement("div");
+      empty.className = "conv-empty";
+      empty.textContent = "هنوز گفتگویی وجود ندارد.";
+      convListEl.appendChild(empty);
+    } else {
+      const sorted = [...conversations].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      sorted.forEach(c => {
+        const item = document.createElement("div");
+        item.className = "conv-item" + (currentConv && c.id === currentConv.id ? " active" : "");
+        item.addEventListener("click", () => switchConversation(c.id));
+
+        const titleSpan = document.createElement("span");
+        titleSpan.className = "conv-title-text";
+        titleSpan.textContent = c.title || "گفتگوی جدید";
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "conv-delete";
+        delBtn.title = "حذف گفتگو";
+        delBtn.innerHTML = TRASH_ICON;
+        delBtn.addEventListener("click", (e) => deleteConversation(c.id, e));
+
+        item.appendChild(titleSpan);
+        item.appendChild(delBtn);
+        convListEl.appendChild(item);
+      });
+    }
+    convTitleEl.textContent = getCurrentConv().title || "گفتگوی جدید";
+  }
+
+  /* ---------------- Theme ---------------- */
+  function applyTheme(theme){
+    document.documentElement.setAttribute("data-theme", theme);
+    try{ localStorage.setItem(LS_THEME, theme); }catch(e){}
+    updateThemeToggleUI(theme);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute("content", theme === "light" ? "#f9f9f9" : "#171717");
+  }
+  function toggleTheme(){
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    applyTheme(current === "dark" ? "light" : "dark");
+  }
+  function updateThemeToggleUI(theme){
+    const icon = theme === "dark" ? SUN_ICON : MOON_ICON;
+    themeToggleLabel.textContent = theme === "dark" ? "تم روشن" : "تم تاریک";
+    themeToggleBtn.innerHTML = icon + '<span id="themeToggleLabel">' + themeToggleLabel.textContent + "</span>";
+    // بازتعریف مرجع، چون innerHTML بازنویسی شد
+    window.__themeLabelEl = themeToggleBtn.querySelector("#themeToggleLabel");
+  }
+  function initTheme(){
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    updateThemeToggleUI(current);
+  }
+
+  /* ---------------- Status pill ---------------- */
+  function setBusyStatus(busy){
+    isBusy = busy;
+    sendBtn.disabled = busy;
+    attachBtn.disabled = busy;
+    if(busy){
+      statusDot.className = "status-dot busy";
+      statusText.textContent = "در حال پردازش...";
+    } else {
+      statusDot.className = "status-dot";
+      statusText.textContent = "آماده";
+    }
+  }
+  function setErrorStatus(msg){
+    statusDot.className = "status-dot error";
+    statusText.textContent = msg || "خطا در اتصال";
+  }
+
+  /* ---------------- Markdown rendering (safe: escape first, then convert) ---------------- */
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function renderMarkdown(raw){
+    if(!raw) return "";
+    let text = escapeHtml(raw).replace(/\r\n/g, "\n");
+
+    // بلوک کد ```lang\n...``` — زبان و کد را جدا نگه می‌داریم تا هدر بلوک کد را بسازیم
+    const codeBlocks = [];
+    text = text.replace(/```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g, (m, lang, code) => {
+      codeBlocks.push({ lang: (lang || "").trim(), code: code.replace(/\n$/, "") });
+      return `\n\n\u0000CODEBLOCK${codeBlocks.length - 1}\u0000\n\n`;
+    });
+
+    // کد درون‌خطی `code`
+    text = text.replace(/`([^`\n]+)`/g, '<code class="md-inline-code">$1</code>');
+
+    // تیترها
+    text = text.replace(/^#{3,6}\s+(.+)$/gm, '\n\n<h4 class="md-h">$1</h4>\n\n');
+    text = text.replace(/^##\s+(.+)$/gm, '\n\n<h3 class="md-h">$1</h3>\n\n');
+    text = text.replace(/^#\s+(.+)$/gm, '\n\n<h2 class="md-h">$1</h2>\n\n');
+
+    // پررنگ و مورب
+    text = text.replace(/\*\*([^\*\n]+)\*\*/g, "<strong>$1</strong>");
+    text = text.replace(/__([^_\n]+)__/g, "<strong>$1</strong>");
+    text = text.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
+
+    // لینک [متن](url)
+    text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      '<a class="md-link" href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+    // فهرست‌های بدون‌شماره
+    text = text.replace(/(?:^|\n)((?:[ \t]*[-*•][ \t]+.+(?:\n|$))+)/g, (m, block) => {
+      const items = block.trim().split("\n")
+        .map(l => l.replace(/^[ \t]*[-*•][ \t]+/, "").trim())
+        .map(i => `<li>${i}</li>`).join("");
+      return `\n\n<ul class="md-list">${items}</ul>\n\n`;
+    });
+
+    // فهرست‌های شماره‌دار
+    text = text.replace(/(?:^|\n)((?:[ \t]*\d+[.)][ \t]+.+(?:\n|$))+)/g, (m, block) => {
+      const items = block.trim().split("\n")
+        .map(l => l.replace(/^[ \t]*\d+[.)][ \t]+/, "").trim())
+        .map(i => `<li>${i}</li>`).join("");
+      return `\n\n<ol class="md-list">${items}</ol>\n\n`;
+    });
+
+    // پاراگراف‌بندی بر اساس خط خالی
+    const blocks = text.split(/\n{2,}/);
+    text = blocks.map(b => {
+      const t = b.trim();
+      if(!t) return "";
+      if(/^<(h2|h3|h4|ul|ol)[ >]/.test(t)) return t;
+      if(/^\u0000CODEBLOCK\d+\u0000$/.test(t)) return t;
+      return `<p class="md-p">${t.replace(/\n/g, "<br>")}</p>`;
+    }).join("");
+
+    // برگرداندن بلوک‌های کد به‌صورت جعبه‌ی هدردار با دکمه‌ی کپی (مثل چت‌جی‌پی‌تی)
+    text = text.replace(/\u0000CODEBLOCK(\d+)\u0000/g, (m, i) => {
+      const block = codeBlocks[Number(i)];
+      const langLabel = block.lang || "متن";
+      return `<div class="code-block"><div class="code-block-header"><span class="code-lang">${escapeHtml(langLabel)}</span><button type="button" class="code-copy-btn">${COPY_ICON}<span class="code-copy-label">کپی کد</span></button></div><pre class="md-code"><code>${block.code}</code></pre></div>`;
+    });
+
+    return text;
+  }
+
+  /* ---------------- Clipboard helper ---------------- */
+  function copyTextToClipboard(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve) => {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try{ document.execCommand("copy"); }catch(e){}
+      document.body.removeChild(ta);
+      resolve();
+    });
+  }
+
+  /* ---------------- Chat rendering ---------------- */
+  function formatTime(ts){
+    if(!ts) return "";
+    return new Date(ts).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function scrollChatToBottom(){
+    requestAnimationFrame(() => { chatScrollEl.scrollTop = chatScrollEl.scrollHeight; });
+  }
+
+  function buildEmptyState(){
+    const wrap = document.createElement("div");
+    wrap.className = "empty-state";
+    wrap.innerHTML = `
+      <h2>چطور می‌تونم امروز کمکتون کنم؟</h2>
+      <div class="suggestions">
+        <button class="suggestion-chip" data-text="خودت را معرفی کن">خودت را معرفی کن</button>
+        <button class="suggestion-chip" data-text="یک شعر کوتاه فارسی بنویس">یک شعر کوتاه فارسی بنویس</button>
+        <button class="suggestion-chip" data-text="اخبار امروز ایران چیست؟">اخبار امروز ایران</button>
+      </div>
+    `;
+    return wrap;
+  }
+
+  function buildChatMessageEl(m){
+    const block = document.createElement("div");
+    block.className = "msg-block " + m.role;
+
+    if(m.role === "user"){
+      const bubble = document.createElement("div");
+      bubble.className = "msg-bubble";
+      if(m.attachment){
+        if(m.attachment.kind === "image" && m.attachment.thumb){
+          const img = document.createElement("img");
+          img.className = "msg-attach-image";
+          img.src = m.attachment.thumb;
+          img.alt = m.attachment.name || "تصویر ارسالی";
+          bubble.appendChild(img);
+        } else {
+          const chip = document.createElement("div");
+          chip.className = "msg-attach-file";
+          chip.innerHTML = FILE_ICON + `<span>${escapeHtml(m.attachment.name || "فایل پیوست")}</span>`;
+          bubble.appendChild(chip);
+        }
+      }
+      if(m.content){
+        const textSpan = document.createElement("span");
+        textSpan.textContent = m.content;
+        bubble.appendChild(textSpan);
+      }
+      block.appendChild(bubble);
+      return block;
+    }
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "AI";
+
+    const contentWrap = document.createElement("div");
+    contentWrap.className = "msg-content";
+    contentWrap.dataset.raw = encodeURIComponent(m.content || "");
+
+    if(m.attachment && m.attachment.kind === "generated-image"){
+      const imgWrap = document.createElement("div");
+      imgWrap.className = "msg-generated-image-wrap";
+      const img = document.createElement("img");
+      img.className = "msg-generated-image";
+      img.src = m.attachment.dataURI;
+      img.alt = m.attachment.prompt || "تصویر تولید شده";
+      imgWrap.appendChild(img);
+      const dlLink = document.createElement("a");
+      dlLink.href = m.attachment.dataURI;
+      const safeName = (m.attachment.prompt || "image").replace(/[^a-zA-Z0-9آ-ی ]/g, "").trim().replace(/\s+/g, "-").slice(0, 40) || "image";
+      dlLink.download = safeName + ".jpg";
+      dlLink.className = "msg-generated-image-download";
+      dlLink.textContent = "⬇ دانلود تصویر";
+      imgWrap.appendChild(dlLink);
+      contentWrap.appendChild(imgWrap);
+    }
+
+    const textEl = document.createElement("div");
+    textEl.className = "msg-text";
+    textEl.innerHTML = renderMarkdown(m.content);
+
+    const actions = document.createElement("div");
+    actions.className = "msg-actions";
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "msg-action-btn";
+    copyBtn.title = "کپی پاسخ";
+    copyBtn.innerHTML = COPY_ICON;
+    copyBtn.addEventListener("click", () => {
+      const raw = decodeURIComponent(contentWrap.dataset.raw || "");
+      copyTextToClipboard(raw).then(() => {
+        copyBtn.classList.add("copied");
+        const original = copyBtn.innerHTML;
+        copyBtn.innerHTML = CHECK_ICON;
+        setTimeout(() => { copyBtn.classList.remove("copied"); copyBtn.innerHTML = original; }, 1500);
+      });
+    });
+    actions.appendChild(copyBtn);
+
+    contentWrap.appendChild(textEl);
+    contentWrap.appendChild(actions);
+
+    block.appendChild(avatar);
+    block.appendChild(contentWrap);
+    return block;
+  }
+
+  function renderChat(){
+    const conv = getCurrentConv();
+    chatInnerEl.innerHTML = "";
+    convTitleEl.textContent = conv.title || "گفتگوی جدید";
+    if(conv.messages.length === 0){
+      chatInnerEl.appendChild(buildEmptyState());
+      return;
+    }
+    conv.messages.forEach(m => chatInnerEl.appendChild(buildChatMessageEl(m)));
+    scrollChatToBottom();
+  }
+
+  // یک ردیف موقتِ «در حال تایپ» شبیه چت‌جی‌پی‌تی، مستقل از آرایه‌ی پیام‌ها
+  function addTypingIndicator(){
+    const block = document.createElement("div");
+    block.className = "msg-block assistant";
+    block.id = "typingIndicatorBlock";
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "AI";
+
+    const wrap = document.createElement("div");
+    wrap.className = "msg-content";
+    wrap.innerHTML = `<div class="typing-status" id="typingStatusText"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="typing-label">در حال بررسی سؤال...</span></div>`;
+
+    block.appendChild(avatar);
+    block.appendChild(wrap);
+    chatInnerEl.appendChild(block);
+    scrollChatToBottom();
+  }
+  function updateTypingStatus(text){
+    const el = document.getElementById("typingStatusText");
+    const label = el ? el.querySelector(".typing-label") : null;
+    if(label) label.textContent = text;
+  }
+  function removeTypingIndicator(){
+    const el = document.getElementById("typingIndicatorBlock");
+    if(el) el.remove();
+  }
+
+  /* ---------------- ضدِ ارجاع‌دادن کاربر به جای دیگر ---------------- */
+  const REFERRAL_PATTERNS = [
+    /خودت(ان)?\s*(جست ?وجو|سرچ|search)/i,
+    /در\s*گوگل\s*(جست ?وجو|سرچ)/i,
+    /به\s*(سایت|لینک|منبع)\s*(مراجعه|مراجعه کنید|رجوع)/,
+    /برای\s*اطلاعات\s*بیشتر\s*به/,
+    /می ?توانید\s*(جست ?وجو|سرچ)\s*کنید/,
+    /google\s*it/i,
+    /search\s*(online|the\s*web|google)/i
+  ];
+
+  function isReferral(text){
+    return REFERRAL_PATTERNS.some(rx => rx.test(text));
+  }
+
+  async function forceDirectAnswer(userText, badReply){
+    const fixMessages = [
+      {
+        role: "system",
+        content: CONFIG.systemPrompt +
+          " توجه: پاسخ قبلی‌ات اشتباه بود، چون کاربر را به جست‌وجوی خودش، گوگل یا مراجعه به لینک/منبع حواله دادی. این کاملاً ممنوع است. " +
+          "حالا باید همان سؤال را دوباره و این‌بار به‌طور کامل و مستقیم، با تمام اطلاعاتی که خودت داری (یا از نتایج تحقیق قبلی در اختیار داری)، جواب بدهی؛ هیچ ارجاعی به جای دیگر نده و هیچ اشاره‌ای هم به این‌که پاسخ قبلی را اصلاح می‌کنی نکن؛ فقط پاسخ نهایی و کامل را بنویس."
+      },
+      ...recentHistoryForModel(),
+      {
+        role: "user",
+        content: `سؤال: ${userText}\n\nپاسخ نادرست قبلی (که کاربر را حواله داده بود): "${badReply}"\n\nحالا پاسخ درست، کامل و مستقیم را بدون هیچ حواله‌دادنی بنویس.`
+      }
+    ];
+    return callHF(fixMessages);
+  }
+
+  /* ---------------- Chat send logic ---------------- */
+  function recentHistoryForModel(){
+    return getCurrentConv().messages
+      .filter(m => m.role === "user" || m.role === "assistant")
+      .slice(-8, -1)
+      .map(m => ({ role: m.role, content: m.content }));
+  }
+
+  /* ---------------- پیوست عکس/فایل ---------------- */
+  function formatBytes(n){
+    if(n < 1024) return n + " B";
+    if(n < 1024*1024) return Math.round(n/1024) + " KB";
+    return (n/1024/1024).toFixed(1) + " MB";
+  }
+
+  function onAttachPick(){
+    if(isBusy) return;
+    attachInput.click();
+  }
+
+  function makeImageThumb(file){
+    return new Promise((resolve) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = () => {
+        img.onload = () => {
+          const maxDim = 220;
+          let { width, height } = img;
+          if(width > height){ height = Math.round(height * maxDim / width); width = maxDim; }
+          else { width = Math.round(width * maxDim / height); height = maxDim; }
+          const canvas = document.createElement("canvas");
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          try{ resolve(canvas.toDataURL("image/jpeg", 0.7)); }
+          catch(e){ resolve(reader.result); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = reader.result;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function onAttachFileSelected(file){
+    if(!file) return;
+    const mime = (file.type || "").toLowerCase();
+    const ext = (file.name || "").split(".").pop().toLowerCase();
+
+    const isImage = ATTACH_IMAGE_TYPES[mime] || ATTACH_IMAGE_EXTS[ext];
+    const isDoc = ATTACH_FILE_TYPES[mime] || ATTACH_FILE_EXTS[ext];
+
+    if(!isImage && !isDoc){
+      showAttachError("نوع این فایل پشتیبانی نمی‌شود. فرمت‌های مجاز: JPG، PNG، WEBP، PDF، TXT، CSV، JSON، DOCX، XLSX.");
+      return;
+    }
+
+    const kind = isImage ? "image" : "file";
+    const maxBytes = kind === "image" ? ATTACH_MAX_IMAGE_BYTES : ATTACH_MAX_FILE_BYTES;
+    if(file.size > maxBytes){
+      showAttachError(`حجم فایل بیش از حد مجاز است (حداکثر ${Math.round(maxBytes/1024/1024)} مگابایت).`);
+      return;
+    }
+
+    pendingAttachment = { file, kind, thumb: null, status: "آماده ارسال" };
+    renderAttachmentPreview();
+
+    if(kind === "image"){
+      const thumb = await makeImageThumb(file);
+      if(pendingAttachment && pendingAttachment.file === file){
+        pendingAttachment.thumb = thumb;
+        renderAttachmentPreview();
+      }
+    }
+  }
+
+  function clearAttachment(){
+    pendingAttachment = null;
+    attachInput.value = "";
+    renderAttachmentPreview();
+  }
+
+  function showAttachError(message){
+    attachPreviewRow.classList.add("active");
+    attachPreviewRow.innerHTML = `<div class="attach-error-text">${escapeHtml(message)}</div>`;
+    setTimeout(() => {
+      if(!pendingAttachment) renderAttachmentPreview();
+    }, 3500);
+  }
+
+  function renderAttachmentPreview(){
+    if(!pendingAttachment){
+      attachPreviewRow.classList.remove("active");
+      attachPreviewRow.innerHTML = "";
+      return;
+    }
+    attachPreviewRow.classList.add("active");
+    attachPreviewRow.innerHTML = "";
+
+    const chip = document.createElement("div");
+    chip.className = "attach-chip";
+
+    if(pendingAttachment.kind === "image" && pendingAttachment.thumb){
+      const img = document.createElement("img");
+      img.className = "attach-chip-thumb";
+      img.src = pendingAttachment.thumb;
+      chip.appendChild(img);
+    } else {
+      const iconBox = document.createElement("div");
+      iconBox.className = "attach-chip-file-icon";
+      const ext = (pendingAttachment.file.name || "").split(".").pop().toUpperCase().slice(0, 4);
+      iconBox.textContent = ext || (pendingAttachment.kind === "image" ? "IMG" : "FILE");
+      chip.appendChild(iconBox);
+    }
+
+    const info = document.createElement("div");
+    info.className = "attach-chip-info";
+    const nameEl = document.createElement("div");
+    nameEl.className = "attach-chip-name";
+    nameEl.textContent = pendingAttachment.file.name || "فایل پیوست";
+    const statusEl = document.createElement("div");
+    statusEl.className = "attach-chip-status";
+    statusEl.textContent = `${formatBytes(pendingAttachment.file.size)} · ${pendingAttachment.status || "آماده ارسال"}`;
+    info.appendChild(nameEl);
+    info.appendChild(statusEl);
+    chip.appendChild(info);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "attach-chip-remove";
+    removeBtn.title = "حذف پیوست";
+    removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>';
+    removeBtn.addEventListener("click", clearAttachment);
+    chip.appendChild(removeBtn);
+
+    attachPreviewRow.appendChild(chip);
+  }
+
+  /* ---------------- تولید عکس واقعی (استفاده از اکشن image که در Worker موجود است) ---------------- */
+  function detectImageGenIntent(text){
+    if(!text) return null;
+    const t = text.trim();
+
+    const enMatch = t.match(/^(?:please\s+)?(?:generate|draw|create|make|paint)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture|photo|drawing|painting|illustration)\s*(?:of|for|about|showing)?\s*[:\-]?\s*(.*)$/i);
+    if(enMatch) return (enMatch[1] || t).trim() || t;
+
+    // تشخیص و استخراج بر اساس واحد کلمه (نه substring) تا کلمات فارسی به‌اشتباه بریده نشوند
+    const imgWordSet = new Set(["عکس","تصویر","نقاشی","طرح","پوستر","لوگو"]);
+    const singleVerbSet = new Set(["بساز","بسازی","بکش","بکشی"]);
+    const twoWordVerbs = [["تولید","کن"], ["درست","کن"], ["طراحی","کن"], ["ایجاد","کن"]];
+    const stopWordSet = new Set(["برای","من","لطفا","لطفاً","یک","از","لطفآ"]);
+
+    const rawTokens = t.split(/\s+/).filter(Boolean);
+    const cleaned = rawTokens.map(w => w.replace(/[؟?.!،,]+$/g, ""));
+
+    let hasImgWord = false, hasVerb = false;
+    const keep = new Array(cleaned.length).fill(true);
+
+    for(let i = 0; i < cleaned.length; i++){
+      const w = cleaned[i];
+      if(imgWordSet.has(w)){ hasImgWord = true; keep[i] = false; continue; }
+      if(singleVerbSet.has(w)){ hasVerb = true; keep[i] = false; continue; }
+      if(i < cleaned.length - 1){
+        const pair = twoWordVerbs.find(([a,b]) => a === w && b === cleaned[i+1]);
+        if(pair){ hasVerb = true; keep[i] = false; keep[i+1] = false; i++; continue; }
+      }
+      if(stopWordSet.has(w)){ keep[i] = false; }
+    }
+
+    if(!hasImgWord || !hasVerb) return null;
+
+    const subject = cleaned.filter((w, i) => keep[i]).join(" ").trim();
+    return subject || t;
+  }
+
+  // مطمئن می‌شود هر مقداری (رشته، Error، آبجکت خطای Cloudflare و ...) به یک متن
+  // خوانا تبدیل شود؛ هرگز اجازه نمی‌دهد یک آبجکت مستقیم داخل new Error() یا
+  // یک پیام کاربر قرار بگیرد و به‌صورت "[object Object]" نمایش داده شود.
+  function safeErrText(v){
+    if(!v) return "";
+    if(typeof v === "string") return v;
+    if(v instanceof Error) return v.message || String(v);
+    if(typeof v === "object"){
+      if(typeof v.message === "string") return v.message;
+      if(typeof v.error === "string") return v.error;
+      if(Array.isArray(v.errors) && v.errors[0]){
+        return v.errors.map(e => (typeof e === "string" ? e : e?.message)).filter(Boolean).join("، ");
+      }
+      try{ return JSON.stringify(v).slice(0, 300); }catch(e){}
+    }
+    try{ return String(v); }catch(e){ return ""; }
+  }
+
+  async function callImageGenerationAI(prompt){
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000);
+
+    let res;
+    try{
+      res = await fetch(CONFIG.endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "image", prompt }),
+        signal: controller.signal
+      });
+    }catch(networkErr){
+      if(networkErr && networkErr.name === "AbortError"){
+        throw new Error("سرور هوش مصنوعی پاسخ نداد.");
+      }
+      const e = new Error("اتصال به سرور هوش مصنوعی برقرار نشد. اینترنت خود را بررسی کنید.");
+      e.isNetwork = true;
+      throw e;
+    }finally{
+      clearTimeout(timeout);
+    }
+
+    let data = null;
+    try{ data = await res.json(); }catch(e){}
+
+    if(!res.ok || (data && data.ok === false) || (data && data.error && !data.dataURI)){
+      let detail = safeErrText(data?.error);
+      if(res.status === 429){
+        detail = detail || "محدودیت درخواست رایگان پر شده؛ کمی صبر کنید و دوباره امتحان کنید.";
+      } else if(res.status === 401 || res.status === 403){
+        detail = detail || "دسترسی به سرویس هوش مصنوعی مجاز نیست.";
+      } else if(res.status >= 500 && !data){
+        detail = "ساخت تصویر زمان زیادی برد. لطفاً دوباره تلاش کنید.";
+      }
+      throw new Error(detail || `کد خطا ${res.status}.`);
+    }
+
+    const dataURI = data?.dataURI || (data?.image ? ("data:image/jpeg;base64," + data.image) : null);
+    if(!dataURI){
+      console.warn("پاسخ ناشناخته از ورکر (تولید عکس):", data);
+      throw new Error("تصویری از سرویس دریافت نشد.");
+    }
+    return dataURI;
+  }
+
+  async function handleSend(){
+    const text = messageInput.value.trim();
+    if((!text && !pendingAttachment) || isBusy) return;
+
+    if(!CONFIG.endpoint || CONFIG.endpoint.includes("PASTE_YOUR_WORKER_URL_HERE")){
+      addMessage("user", text);
+      messageInput.value = "";
+      autoResize();
+      renderChat();
+      renderSidebar();
+      addMessage("assistant", "⚠️ این ابزار موقتاً در دسترس نیست.");
+      renderChat();
+      return;
+    }
+
+    if(!pendingAttachment){
+      const genPrompt = detectImageGenIntent(text);
+      if(genPrompt){
+        addMessage("user", text);
+        messageInput.value = "";
+        autoResize();
+        renderChat();
+        renderSidebar();
+
+        setBusyStatus(true);
+        addTypingIndicator();
+        updateTypingStatus("🎨 در حال ساخت تصویر...");
+
+        try{
+          const dataURI = await callImageGenerationAI(genPrompt);
+          removeTypingIndicator();
+          addMessage("assistant", `تصویر بر اساس درخواست «${genPrompt}» ساخته شد.`, {
+            kind: "generated-image",
+            dataURI,
+            prompt: genPrompt
+          });
+          renderChat();
+          renderSidebar();
+          setBusyStatus(false);
+        }catch(err){
+          removeTypingIndicator();
+          console.error(err);
+          const isNetwork = !!(err && err.isNetwork);
+          const msg = "⚠️ خطا در ساخت تصویر: " + (safeErrText(err?.message) || safeErrText(err) || "این ابزار موقتاً در دسترس نیست.");
+          addMessage("assistant", msg);
+          renderChat();
+          setErrorStatus(isNetwork ? "خطا در اتصال" : "موقتاً در دسترس نیست");
+          setBusyStatus(false);
+        }
+        return;
+      }
+    }
+
+    if(pendingAttachment){
+      const attachment = pendingAttachment;
+      const messagesForModel = [
+        ...recentHistoryForModel(),
+        { role: "user", content: text || (attachment.kind === "image" ? "این تصویر را توضیح بده." : "این فایل را بررسی و خلاصه کن.") }
+      ];
+
+      addMessage("user", text, {
+        kind: attachment.kind,
+        name: attachment.file.name,
+        thumb: attachment.thumb || null
+      });
+      messageInput.value = "";
+      clearAttachment();
+      autoResize();
+      renderChat();
+      renderSidebar();
+
+      setBusyStatus(true);
+      addTypingIndicator();
+      updateTypingStatus(attachment.kind === "image" ? "🖼️ در حال بررسی تصویر..." : "📄 در حال پردازش فایل...");
+
+      try{
+        const reply = await callAttachmentAI(messagesForModel, attachment);
+        removeTypingIndicator();
+        addMessage("assistant", reply);
+        renderChat();
+        renderSidebar();
+        setBusyStatus(false);
+      }catch(err){
+        removeTypingIndicator();
+        console.error(err);
+        const isNetwork = !!(err && err.isNetwork);
+        const msg = "⚠️ خطا: " + (safeErrText(err?.message) || safeErrText(err) || "این ابزار موقتاً در دسترس نیست.");
+        addMessage("assistant", msg);
+        renderChat();
+        setErrorStatus(isNetwork ? "خطا در اتصال" : "موقتاً در دسترس نیست");
+        setBusyStatus(false);
+      }
+      return;
+    }
+
+    addMessage("user", text);
+    messageInput.value = "";
+    autoResize();
+    renderChat();
+    renderSidebar();
+
+    setBusyStatus(true);
+    addTypingIndicator();
+
+    try{
+      const reply = await getAssistantReply(text, updateTypingStatus);
+      removeTypingIndicator();
+      addMessage("assistant", reply);
+      renderChat();
+      renderSidebar();
+      setBusyStatus(false);
+    }catch(err){
+      removeTypingIndicator();
+      console.error(err);
+      const isNetwork = !!(err && err.isNetwork);
+      const msg = "⚠️ خطا: " + (safeErrText(err?.message) || safeErrText(err) || "این ابزار موقتاً در دسترس نیست.");
+      addMessage("assistant", msg);
+      renderChat();
+      setErrorStatus(isNetwork ? "خطا در اتصال" : "موقتاً در دسترس نیست");
+      setBusyStatus(false);
+    }
+  }
+
+  /* ---------------- منطق مشترک تولید پاسخ (هم برای چت متنی، هم حالت صوتی) ---------------- */
+  async function getAssistantReply(text, onStatus){
+    const notify = typeof onStatus === "function" ? onStatus : function(){};
+    const decision = await decideAndRespond(text);
+    let reply;
+
+    if(decision.needsSearch){
+      notify("🔎 در حال تحقیق...");
+      const searchResults = await callWebSearch(text);
+      notify("✍️ در حال نوشتن پاسخ...");
+      reply = await callFinalAnswer(text, searchResults);
+    } else {
+      reply = decision.answer;
+    }
+
+    if(isReferral(reply)){
+      notify("✍️ در حال اصلاح پاسخ...");
+      try{
+        const fixed = await forceDirectAnswer(text, reply);
+        if(fixed && !isReferral(fixed)) reply = fixed;
+      }catch(e){ /* اگر اصلاح شکست خورد، همان پاسخ اول نمایش داده می‌شود */ }
+    }
+
+    return reply;
+  }
+
+  /* =========================================================
+     حالت مکالمه صوتی (Voice Mode): میکروفون خودکار + خواندن پاسخ
+     ========================================================= */
+  let voiceRecognition = null;
+  let voiceModeActive = false;
+  let availableVoices = [];
+
+  function loadVoicesList(){
+    availableVoices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  }
+  if(window.speechSynthesis){
+    loadVoicesList();
+    window.speechSynthesis.onvoiceschanged = loadVoicesList;
+  }
+
+  function pickPersianVoice(){
+    if(!availableVoices || availableVoices.length === 0) loadVoicesList();
+    return (availableVoices.find(v => /^fa/i.test(v.lang)) || null);
+  }
+
+  function stripTextForSpeech(raw){
+    let t = raw || "";
+    t = t.replace(/```[\s\S]*?```/g, " یک بخش کد در پاسخ نمایش داده شده که برای شنیدن مناسب نیست. ");
+    t = t.replace(/`([^`]+)`/g, "$1");
+    t = t.replace(/!\[[^\]]*\]\([^)]*\)/g, " ");
+    t = t.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+    t = t.replace(/[*_#>~]/g, "");
+    t = t.replace(/^\s*[-•]\s+/gm, "");
+    t = t.replace(/\n{2,}/g, ". ");
+    t = t.replace(/\n/g, " ");
+    t = t.replace(/\s{2,}/g, " ");
+    return t.trim();
+  }
+
+  function getSpeechRecognitionCtor(){
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  }
+
+  function setVoiceOrbState(state){
+    voiceOrb.className = "voice-orb" + (state ? " " + state : "");
+  }
+
+  function setVoiceStatus(text, transcript){
+    voiceStatusText.textContent = text;
+    if(typeof transcript === "string") voiceTranscriptEl.textContent = transcript;
+  }
+
+  function speakReply(text){
+    return new Promise((resolve) => {
+      if(!window.speechSynthesis){ resolve(); return; }
+      window.speechSynthesis.cancel();
+      const clean = stripTextForSpeech(text);
+      if(!clean){ resolve(); return; }
+
+      const utter = new SpeechSynthesisUtterance(clean);
+      utter.lang = "fa-IR";
+      const v = pickPersianVoice();
+      if(v) utter.voice = v;
+      utter.rate = 1;
+
+      setVoiceOrbState("speaking");
+      setVoiceStatus("🔊 در حال پاسخ‌دادن...", clean);
+
+      utter.onend = () => resolve();
+      utter.onerror = () => resolve();
+      window.speechSynthesis.speak(utter);
+    });
+  }
+
+  function startVoiceListening(){
+    const Ctor = getSpeechRecognitionCtor();
+    if(!Ctor || !voiceModeActive) return;
+
+    voiceRecognition = new Ctor();
+    voiceRecognition.lang = "fa-IR";
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = true;
+    voiceRecognition.maxAlternatives = 1;
+
+    let finalTranscript = "";
+
+    voiceRecognition.onstart = () => {
+      resetAFK();
+      setVoiceOrbState("listening");
+      setVoiceStatus("🎙️ در حال شنیدن... صحبت کنید", "");
+    };
+
+    voiceRecognition.onresult = (event) => {
+      resetAFK();
+      let interim = "";
+      for(let i = event.resultIndex; i < event.results.length; i++){
+        const chunk = event.results[i][0].transcript;
+        if(event.results[i].isFinal) finalTranscript += chunk;
+        else interim += chunk;
+      }
+      voiceTranscriptEl.textContent = finalTranscript + interim;
+    };
+
+    voiceRecognition.onerror = (event) => {
+      if(event.error === "no-speech" || event.error === "aborted"){
+        return; // در onend دوباره تلاش می‌شود
+      }
+      if(event.error === "not-allowed" || event.error === "service-not-allowed"){
+        setVoiceStatus("⚠️ دسترسی به میکروفون رد شد. لطفاً اجازه دسترسی بدهید.");
+        setVoiceOrbState("error");
+        voiceModeActive = false;
+      } else {
+        setVoiceStatus("⚠️ خطا در تشخیص گفتار. دوباره تلاش می‌کنم...");
+        setVoiceOrbState("error");
+      }
+    };
+
+    voiceRecognition.onend = () => {
+      if(!voiceModeActive) return;
+      const text = finalTranscript.trim();
+      if(!text){
+        setTimeout(() => { if(voiceModeActive) startVoiceListening(); }, 400);
+        return;
+      }
+      handleVoiceUserText(text);
+    };
+
+    try{
+      voiceRecognition.start();
+    }catch(e){
+      setTimeout(() => { if(voiceModeActive) startVoiceListening(); }, 400);
+    }
+  }
+
+  async function handleVoiceUserText(text){
+    addMessage("user", text);
+    renderChat();
+    renderSidebar();
+
+    setVoiceOrbState("thinking");
+    setVoiceStatus("🤔 در حال فکر کردن...", text);
+
+    try{
+      const reply = await getAssistantReply(text, (s) => setVoiceStatus(s, text));
+      addMessage("assistant", reply);
+      renderChat();
+      renderSidebar();
+      await speakReply(reply);
+    }catch(err){
+      console.error(err);
+      addMessage("assistant", "⚠️ خطا: " + (safeErrText(err?.message) || safeErrText(err) || "پاسخی دریافت نشد."));
+      renderChat();
+      renderSidebar();
+      await speakReply("متاسفانه در دریافت پاسخ خطایی پیش آمد. لطفاً دوباره تلاش کنید.");
+    }
+
+    if(voiceModeActive){
+      startVoiceListening();
+    }
+  }
+
+  function openVoiceMode(){
+    const Ctor = getSpeechRecognitionCtor();
+    if(!Ctor){
+      alert("متأسفانه مرورگر شما از قابلیت تشخیص گفتار پشتیبانی نمی‌کند. لطفاً از مرورگر کروم استفاده کنید.");
+      return;
+    }
+    voiceModeActive = true;
+    voiceOverlay.classList.add("active");
+    setVoiceOrbState("");
+    setVoiceStatus("در حال آماده‌سازی میکروفون...", "");
+    startVoiceListening();
+  }
+
+  function closeVoiceMode(){
+    voiceModeActive = false;
+    if(voiceRecognition){
+      try{
+        voiceRecognition.onend = null;
+        voiceRecognition.abort();
+      }catch(e){}
+      voiceRecognition = null;
+    }
+    if(window.speechSynthesis) window.speechSynthesis.cancel();
+    voiceOverlay.classList.remove("active");
+  }
+
+  /* ---------------- Helper: یک تماس خام با Hugging Face (بدون منطق جستجو) ---------------- */
+  async function callHF(messagesPayload){
+    const payload = {
+      max_tokens: CONFIG.maxTokens,
+      messages: messagesPayload
+    };
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000);
+
+    let res;
+    try{
+      res = await fetch(CONFIG.endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+    }catch(networkErr){
+      if(networkErr && networkErr.name === "AbortError"){
+        throw new Error("سرور هوش مصنوعی پاسخ نداد.");
+      }
+      const e = new Error("اتصال به سرور هوش مصنوعی برقرار نشد. اینترنت خود را بررسی کنید.");
+      e.isNetwork = true;
+      throw e;
+    }finally{
+      clearTimeout(timeout);
+    }
+
+    if(!res.ok){
+      let detail = "";
+      try{
+        const errJson = await res.json();
+        detail = safeErrText(errJson?.error?.message || errJson?.message || errJson?.error);
+      }catch(e){}
+      if(res.status === 401 || res.status === 403){
+        detail = "دسترسی به سرویس هوش مصنوعی مجاز نیست. تنظیمات Worker را بررسی کنید.";
+      } else if(res.status === 429){
+        detail = "محدودیت درخواست رایگان پر شده؛ کمی صبر کنید و دوباره امتحان کنید.";
+      }
+      throw new Error(`کد خطا ${res.status}. ${detail}`.trim());
+    }
+
+    const data = await res.json();
+    const content =
+      data?.choices?.[0]?.message?.content ??
+      data?.choices?.[0]?.text ??
+      data?.result?.response ??
+      data?.result?.output_text ??
+      data?.response ??
+      data?.answer ??
+      data?.text ??
+      data?.content ??
+      data?.message ??
+      (typeof data === "string" ? data : null);
+
+    if(!content){
+      console.warn("پاسخ ناشناخته از ورکر:", data);
+      throw new Error("پاسخ دریافتی از سرویس قابل شناسایی نبود.");
+    }
+    return String(content).trim();
+  }
+
+  /* ---------------- ارسال عکس/فایل پیوست‌شده (multipart/form-data) ---------------- */
+  async function callAttachmentAI(messagesPayload, attachment){
+    const form = new FormData();
+    form.append("action", "chat");
+    form.append("messages", JSON.stringify(messagesPayload));
+    if(attachment.kind === "image"){
+      form.append("image", attachment.file, attachment.file.name || "image");
+    } else {
+      form.append("file", attachment.file, attachment.file.name || "file");
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000);
+
+    let res;
+    try{
+      res = await fetch(CONFIG.endpoint, {
+        method: "POST",
+        body: form,
+        signal: controller.signal
+      });
+    }catch(networkErr){
+      if(networkErr && networkErr.name === "AbortError"){
+        throw new Error("سرور هوش مصنوعی پاسخ نداد.");
+      }
+      const e = new Error("اتصال به سرور هوش مصنوعی برقرار نشد. اینترنت خود را بررسی کنید.");
+      e.isNetwork = true;
+      throw e;
+    }finally{
+      clearTimeout(timeout);
+    }
+
+    let data = null;
+    try{ data = await res.json(); }catch(e){}
+
+    if(!res.ok || (data && data.ok === false)){
+      let detail = safeErrText(data?.error);
+      if(res.status === 413){
+        detail = detail || "حجم فایل بیش از حد مجاز است.";
+      } else if(res.status === 415){
+        detail = detail || "نوع فایل پشتیبانی نمی‌شود.";
+      } else if(res.status === 429){
+        detail = detail || "محدودیت درخواست رایگان پر شده؛ کمی صبر کنید و دوباره امتحان کنید.";
+      } else if(res.status === 401 || res.status === 403){
+        detail = detail || "دسترسی به سرویس هوش مصنوعی مجاز نیست.";
+      } else if(res.status >= 500 && !data){
+        detail = "پردازش این فایل زمان زیادی برد. لطفاً یک فایل کوچک‌تر امتحان کنید یا دوباره تلاش کنید.";
+      }
+      throw new Error(detail || `کد خطا ${res.status}.`);
+    }
+
+    const content = data?.response ?? data?.answer ?? data?.text ?? data?.content ?? data?.message;
+    if(!content){
+      console.warn("پاسخ ناشناخته از ورکر:", data);
+      throw new Error("پاسخ دریافتی از سرویس قابل شناسایی نبود.");
+    }
+    return String(content).trim();
+  }
+
+  /* ---------------- تشخیص نیاز به جستجو + پاسخ مستقیم اگر نیازی نبود ---------------- */
+  const SEARCH_MARKER = "NEED_SEARCH";
+
+  const FORCE_SEARCH_KEYWORDS = [
+    "جستجو","جست‌وجو","سرچ","سرچ کن","سرچش کن","جستجو کن","جست‌وجو کن",
+    "بگرد","بگرد ببین","برو ببین","پیدا کن","پیداش کن","پیدا می‌کنی","پیدا میشه","پیدا می‌شود",
+    "تحقیق","تحقیق کن","تحقیق کن ببین","تحقیق کامل","تحقیق دقیق","تحقیق عمیق","تحقیق بیشتر",
+    "بررسی","بررسی کن","بررسیش کن","بررسی کن ببین","بررسی کامل","بررسی دقیق","بررسی بیشتر","بررسی تخصصی",
+    "اطلاعات","اطلاعات بیشتر","اطلاعات کامل","اطلاعات دقیق","اطلاعات جدید","اطلاعات به‌روز","اطلاعات بروز",
+    "منابع","منبع","منبع معتبر","منابع معتبر","منبع رسمی","منابع رسمی","رفرنس","رفرنس‌ها",
+    "منبعش","منبعش رو پیدا کن","منبع را پیدا کن","مدرک","مدارک","شواهد","سند","اسناد","داده","داده‌ها",
+    "اطلاعات اینترنت","از اینترنت پیدا کن","از اینترنت بررسی کن","از گوگل پیدا کن",
+    "تو اینترنت بگرد","تو اینترنت پیدا کن","وب را بررسی کن","وب رو بررسی کن",
+    "الان","همین الان","در حال حاضر","فعلاً","فعلا","کنونی","فعلی","وضعیت فعلی","وضعیت کنونی",
+    "امروز","امشب","دیروز","فردا","پس‌فردا","این روزها","اخیراً","اخیرا","به تازگی","به‌تازگی",
+    "تازه","جدید","جدیدترین","آخرین","آخرین اطلاعات","آخرین اخبار","آخرین وضعیت","آخرین نسخه",
+    "آخرین قیمت","آخرین تغییرات","اطلاعات روز","به‌روز","به روز","بروز","آپدیت","آپدیت شده",
+    "به‌روزرسانی","به روزرسانی","تازه‌ترین","جدیدترین اطلاعات","جدیدترین اخبار","جدیدترین وضعیت",
+    "این هفته","هفته گذشته","هفته آینده","این ماه","ماه گذشته","ماه آینده","امسال","سال گذشته","سال آینده",
+    "اخیراً چه شده","الان چه خبره","چه خبر جدیدی","چه اتفاقی افتاده","هنوز هست","هنوز وجود داره",
+    "هنوز موجوده","تغییر کرده","تغییرات جدید","آخرین تغییر","آخرین بروزرسانی",
+    "خبر","اخبار","خبر جدید","اخبار جدید","خبر فوری","اخبار فوری","خبرهای جدید","اخبار امروز","خبر امروز",
+    "اخبار این هفته","خبر این هفته","اخبار اخیر","خبر اخیر","اتفاق","اتفاقات","اتفاقات اخیر","اتفاق جدید",
+    "چه خبر","چه خبر شده","چی شده","چی اتفاق افتاده","چه اتفاقی افتاد","آخرین خبر","آخرین اخبار",
+    "خبر فوری جدید","گزارش جدید","گزارش امروز","گزارش اخیر","گزارش رسمی","بیانیه","بیانیه جدید",
+    "اعلامیه","اعلام کرد","اعلام شده","واکنش","واکنش‌ها","واکنش جدید","تحولات","تحولات اخیر",
+    "تحولات جدید","وضعیت","وضعیت جدید","آخرین وضعیت",
+    "قیمت","قیمتش","قیمت الان","قیمت امروز","قیمت فعلی","قیمت جدید","آخرین قیمت","قیمت روز",
+    "قیمت به روز","قیمت بروز","چنده","چند است","چند شده","چقدر است","چقدر شده","ارزش","ارزش فعلی",
+    "ارزش امروز","هزینه","هزینه خرید","هزینه فعلی","تعرفه","تعرفه جدید","نرخ","نرخ فعلی","نرخ امروز",
+    "نرخ جدید","خرید","خرید آنلاین","برای خرید","قابل خرید","موجود","موجوده","موجود هست","موجودی",
+    "موجودی فعلی","موجودی فروشگاه","فروش","فروشنده","فروشگاه","فروشگاه رسمی","نمایندگی","نمایندگی رسمی",
+    "تخفیف","تخفیف جدید","حراج","ارزان","ارزان‌ترین","گران","گران‌ترین","بهترین قیمت","کمترین قیمت",
+    "بیشترین قیمت","قیمت مناسب","قیمت بازار","قیمت جهانی","قیمت ایران","قیمت دلاری","قیمت یورویی",
+    "مقایسه","مقایسه کن","مقایسه‌شون کن","مقایسه کامل","مقایسه دقیق","مقایسه تخصصی","مقایسه بین",
+    "فرق","فرقشون","فرق اینا","تفاوت","تفاوتشان","تفاوتشون","چه فرقی","چه تفاوتی","کدوم بهتره",
+    "کدام بهتر است","بهتره","بهترین","بهترین گزینه","بهترین انتخاب","بهترین مدل","بهترین محصول",
+    "بهترین سایت","بهترین برنامه","بهترین نرم‌افزار","بهترین سرویس","سریع‌ترین",
+    "قوی‌ترین","ضعیف‌ترین","جدیدترین مدل","کدام مناسب‌تر است","کدوم مناسب‌تره","کدام را انتخاب کنم",
+    "کدومو انتخاب کنم","بین این دو","بین اینا","در مقابل","در مقایسه با","نسبت به","ارزش خرید",
+    "ارزش خرید بیشتری","مزایا و معایب","مزایا","معایب",
+    "نرم افزار","نرم‌افزار","برنامه","اپلیکیشن","اپ","نسخه","ورژن","نسخه جدید","ورژن جدید",
+    "آخرین نسخه","آخرین ورژن","آپدیت جدید","نسخه آپدیت","نسخه به‌روز","دانلود","دانلود کن",
+    "لینک دانلود","دانلود از سایت رسمی","نصب","نصب کن","نصب کردن","نحوه نصب","آموزش نصب",
+    "سیستم مورد نیاز","حداقل سیستم","سیستم پیشنهادی","سازگاری","سازگار","پشتیبانی","پشتیبانی می‌کند",
+    "قابلیت","قابلیت جدید","ویژگی","ویژگی جدید","تغییرات","تغییرات نسخه","تاریخ انتشار","انتشار",
+    "منتشر شده","نسخه آزمایشی","بتا","نسخه بتا","رایگان","پولی","قیمت برنامه","لایسنس","مجوز","کرک","امنیت برنامه",
+    "برنامه نویسی","برنامه‌نویسی","کدنویسی","کد","کد جدید","مثال کد","نمونه کد","آموزش برنامه نویسی",
+    "آموزش برنامه‌نویسی","مستندات","مستندات رسمی","داکیومنت","documentation","API","API جدید","API رسمی",
+    "API documentation","SDK","کتابخانه","کتابخانه جدید","Library","Framework","فریم ورک","فریم‌ورک",
+    "نسخه فریم ورک","پلاگین","افزونه","GitHub","گیت‌هاب","GitLab","Repository","Repo","مخزن","Release",
+    "Commit","Pull Request","Issue","Bug","باگ","خطا","ارور","Error","رفع خطا","رفع ارور","رفع باگ",
+    "Fix","Patch","نسخه جدید کتابخانه","نسخه جدید API","Deprecated","منسوخ","پشتیبانی نمی‌شود",
+    "سازگاری نسخه","امنیت کد","آسیب پذیری","آسیب‌پذیری","CVE","Exploit","Security Update",
+    "هوش مصنوعی","AI","Artificial Intelligence","مدل هوش مصنوعی","مدل جدید","آخرین مدل","بهترین مدل",
+    "مدل فعلی","مدل زبان","LLM","مدل زبانی","مدل مولد","Generative AI","هوش مصنوعی مولد","ChatGPT",
+    "OpenAI","Gemini","Claude","Grok","Copilot","Perplexity","DeepSeek","Mistral","Llama","API هوش مصنوعی",
+    "قیمت API","هزینه API","محدودیت API","Quota","توکن","Token","Context","Context Window","Benchmark",
+    "بنچمارک","مدل جدید هوش مصنوعی","نسخه جدید مدل","آخرین مدل AI","بهترین هوش مصنوعی",
+    "بهترین AI","مقایسه مدل‌ها","مقایسه هوش مصنوعی","RAG","Agent","AI Agent","عامل هوشمند",
+    "Fine-tuning","فاین تیون","Embedding","Vector Database","پایگاه داده برداری","Prompt","پرامپت",
+    "Prompt Engineering","ابزار هوش مصنوعی","سرویس هوش مصنوعی","مدل رایگان","مدل پولی","قیمت مدل",
+    "سایت","وب سایت","وب‌سایت","سایت اینترنتی","لینک","لینک سایت","آدرس سایت","سایت رسمی",
+    "وب‌سایت رسمی","دامنه","دامنه جدید","دامنه رسمی","URL","URL رسمی","صفحه","صفحه رسمی","آنلاین",
+    "آفلاین","قطعی","قطع شده","خرابه","کار نمی‌کند","کار نمیکنه","باز نمی‌شود","وضعیت سایت","سرور",
+    "سرور فعلی","هاست","هاستینگ","Hosting","Domain","DNS","Cloudflare","CDN","SSL","HTTPS",
+    "امنیت سایت","سرعت سایت","تست سرعت","سرعت اینترنت","رتبه سایت","رتبه گوگل","سئو","SEO",
+    "ایندکس","Index","Search Console","گوگل سرچ کنسول","نتایج گوگل",
+    "امنیت","امن","امنیت سایبری","امنیت اینترنت","هک","هک شده","هک شده است","هکر","ویروس",
+    "بدافزار","Malware","Virus","Trojan","Ransomware","باج افزار","باج‌افزار",
+    "Vulnerability","نفوذ","حمله","حمله سایبری","تهدید","Threat",
+    "نشت اطلاعات","نشت داده","Data Breach","Security Breach","آپدیت امنیتی",
+    "وصله امنیتی",
+    "درسته","درست است","واقعیه","واقعی است","حقیقت داره","حقیقت دارد","راسته","راست میگه",
+    "صحت","صحت سنجی","صحت‌سنجی","راستی آزمایی","راستی‌آزمایی","تأیید","تایید","تأیید کن","تایید کن",
+    "بررسی صحت","بررسی واقعیت","فکت چک","فکت‌چک","شایعه","شایعه است","جعلی","فیک","دروغ",
+    "قابل اعتماد","معتبر","موثق","Fact Check","Verify","Verification",
+    "True","Fake","Real","Authentic","Reliable",
+    "شرکت","کمپانی","سازنده","توسعه دهنده","توسعه‌دهنده","بنیانگذار","بنیان‌گذار","مدیرعامل","مالک",
+    "سهامدار","تاریخچه شرکت","تأسیس شرکت","تاسیس شرکت","دفتر شرکت","سایت شرکت","سایت رسمی شرکت",
+    "اخبار شرکت","وضعیت شرکت","درآمد شرکت","ارزش شرکت","Founder","CEO","Company","Company News",
+    "Company History","Founded","Established","Owner","Shareholder","Official Website",
+    "شخص","فرد","بازیگر","خواننده","ورزشکار","بازیکن","کارگردان","نویسنده","مدیر",
+    "زندگینامه","بیوگرافی","سن","تولد","محل تولد","سوابق","سابقه","فعالیت","فعالیت جدید",
+    "خبر جدید درباره","آخرین خبر درباره","Biography","Profile","Age","Born","Career","Latest News",
+    "ورزش","فوتبال","بسکتبال","تنیس","والیبال","کشتی","مسابقه","بازی","بازی امروز","بازی فردا",
+    "بازی بعدی","بازی قبلی","نتیجه","نتیجه بازی","نتایج","جدول","جدول لیگ","رده بندی","رده‌بندی",
+    "امتیاز","گل","مصدومیت","ترکیب","ترکیب تیم","نقل و انتقالات","نقل‌وانتقالات","انتقال",
+    "مسابقات","برنامه بازی","زمان بازی","لیگ","جام","قهرمان","آمار","Statistics","Score","Result",
+    "Results","Schedule","Standings","Ranking","Transfer","Injury","Match","Game",
+    "آب و هوا","آب‌وهوا","هوا","وضعیت هوا","هواشناسی","پیش بینی هوا","پیش‌بینی هوا","دما","دمای امروز",
+    "دمای فردا","باران","بارندگی","برف","طوفان","باد","سرعت باد","رطوبت","احتمال بارش","Forecast",
+    "Weather","Temperature","Rain","Snow","Storm","Wind","Humidity",
+    "سفر","مسافرت","گردشگری","مکان","لوکیشن","موقعیت","آدرس","مسیر","فاصله","نزدیک","نزدیک من",
+    "اطراف من","نزدیک‌ترین","کجا","کجاست","باز است","باز هست","بسته است","ساعت کاری","تعطیل",
+    "رستوران","هتل","بیمارستان","فرودگاه","ایستگاه","جاذبه","جاذبه گردشگری","پرواز",
+    "بلیط","بلیت","رزرو","قیمت بلیط","قیمت بلیت","Travel","Hotel","Restaurant","Flight","Ticket",
+    "Booking","Location","Address","Directions","Nearby","Near Me","Opening Hours",
+    "تاریخچه","تاریخ","گذشته","قبلاً","قبلا","قبل‌تر","اولین","اولین بار","قدیمی‌ترین",
+    "چه سالی","چه زمانی","چه موقع","کی ساخته شد","کی منتشر شد","کی تأسیس شد","چه زمانی ساخته شد",
+    "تاریخ ساخت","تاریخ انتشار","تاریخ تأسیس","تأسیس","تاسیس","ساخته شد","منتشر شد","منتشر شده",
+    "Timeline","History","Founded","Established","Released","Published","Created",
+    "آموزش","آموزش کامل","آموزش جدید","آموزش به‌روز","آموزش مرحله به مرحله","آموزش قدم به قدم",
+    "راهنما","راهنمای کامل","راهنمای جدید","چطور","چگونه","چجوری","چطوری","روش","روش انجام","نحوه",
+    "نحوه انجام","نحوه استفاده","چطور استفاده کنم","چگونه استفاده کنم","یادگیری","یاد بگیرم",
+    "آموزش ساخت","آموزش راه‌اندازی","Tutorial","Guide","How To","How do I","How can I",
+    "Step by Step","Instructions",
+    "search","search for","search online","web search","search the web","google","google search",
+    "look up","look it up","find","find out","find online","find information","find details",
+    "research","research this","deep research","investigate","investigate this","check","check online",
+    "check the web","verify","verify online","fact check","look for","browse","browse the web","web","internet",
+    "today","now","right now","currently","current","currently available","latest","latest information",
+    "latest news","latest update","latest version","latest price","new","newest","recent","recently",
+    "recent news","recent update","updated","up to date","up-to-date","as of today","this week",
+    "this month","this year","yesterday","tomorrow","next week","next month","next year",
+    "current status","current situation",
+    "news","breaking news","news today","news update","latest report","report","official announcement",
+    "announcement","statement","press release","reaction","reactions","recent events","what happened",
+    "what's happening","what is happening","current events","developments","latest developments",
+    "price","current price","today's price","market price","price today","how much","how much is",
+    "cost","current cost","latest cost","value","market value","buy","buy online","where to buy",
+    "available","availability","in stock","stock","sold out","sale","discount","deal","cheapest",
+    "most expensive","best price","lowest price","highest price",
+    "compare","comparison","compare with","compare between","difference","differences","versus","vs",
+    "better","best","which is better","which one is better","best option","best choice","best model",
+    "best product","best software","best app","pros","cons","advantages","disadvantages","pros and cons",
+    "worth it","value for money",
+    "software","app","application","program","version","update","download","download link",
+    "official download","install","installation","how to install","system requirements",
+    "minimum requirements","recommended requirements","compatible","compatibility","supported",
+    "support","features","new features","release notes","changelog","beta","beta version",
+    "free","paid","license",
+    "programming","coding","code","source code","example code","code example",
+    "official documentation","library","framework","plugin","extension",
+    "repository","repo","commit","pull request","issue","bug","error",
+    "error message","fix","bug fix","patch","security patch","deprecated","breaking change",
+    "migration","upgrade","upgrade guide","version compatibility","security vulnerability",
+    "vulnerability","exploit",
+    "artificial intelligence","generative AI","AI model","language model","large language model",
+    "latest AI model","new AI model","best AI model","AI tools","AI tool","AI service","AI API",
+    "AI API pricing","API pricing","token pricing","context window","token limit","rate limit",
+    "quota","benchmark","model benchmark","model comparison","AI comparison","AI agent","agent",
+    "fine tuning","fine-tuning","embedding","vector database","prompt","prompt engineering",
+    "AI update","AI news","AI release",
+    "security","cybersecurity","secure","hack","hacked","hacker","virus","malware","trojan",
+    "ransomware","cyber attack","attack","threat","security threat","data breach","security breach",
+    "security update","zero day","zero-day","privacy","privacy update",
+    "person","celebrity","actor","actress","singer","athlete","player","director","writer",
+    "developer","founder","biography","bio","profile","age","born","birth","career","career history",
+    "latest news about","recent news about",
+    "company","corporation","startup","manufacturer","shareholder","company news","company history",
+    "company status","company revenue","company value","company valuation","headquarters",
+    "travel","trip","tourism","hotel","restaurant","airport","flight","flight price","ticket",
+    "ticket price","booking","reservation","location","address","directions","distance","nearby",
+    "near me","open now","opening hours","closed","attractions","tourist attractions",
+    "weather","forecast","weather forecast","today weather","tomorrow weather","temperature","rain",
+    "snow","storm","wind","humidity","precipitation","chance of rain","weather conditions",
+    "history","historical","timeline","past","first","first time","oldest","old",
+    "when was it created","when was it released","when was it founded","release date","creation date",
+    "founding date","published","published date","created","released","founded","established",
+    "tutorial","guide","how to","how do I","how can I","how does it work","step by step",
+    "instructions","learning","course","lesson","example","walkthrough","setup guide",
+    "installation guide","beginner guide","advanced guide"
+  ];
+
+  function heuristicNeedsSearch(text){
+    const lower = text.toLowerCase();
+    return FORCE_SEARCH_KEYWORDS.some(k => lower.includes(k.toLowerCase()));
+  }
+
+  const LEAK_PATTERNS = [
+    /need_search/i,
+    /نیاز[یی]?\s*.{0,15}جست ?وجو/,
+    /جست ?وجو.{0,15}(نیاز|لازم)/,
+    /نیازی نیست.{0,30}(جواب|پاسخ)/,
+    /نمی[- ]?توانم.{0,20}(جواب|پاسخ)/
+  ];
+
+  function looksLikeDecisionLeak(text){
+    const t = text.trim();
+    return t.length < 140 && LEAK_PATTERNS.some(rx => rx.test(t));
+  }
+
+  async function decideAndRespond(userText){
+    if(heuristicNeedsSearch(userText)){
+      return { needsSearch: true };
+    }
+
+    const decisionMessages = [
+      {
+        role: "system",
+        content: CONFIG.systemPrompt +
+          ` قانون مهم: این سؤال را بخوان. اگر پاسخ دقیق و درست به آن نیاز به اطلاعات به‌روز، اخبار، قیمت لحظه‌ای، رویدادهای اخیر یا هر چیزی دارد که ممکن است بعد از آموزش تو تغییر کرده باشد یا از دانش عمومی ثابت قابل پاسخ نیست، آنگاه فقط و فقط دقیقاً همین یک عبارت را بنویس و هیچ چیز دیگری اضافه نکن: ${SEARCH_MARKER}` +
+          " در غیر این صورت (یعنی سؤالات عمومی، سلام و احوال‌پرسی، تعریف‌ها، محاسبات، توضیحات کلی، مکالمه‌ی روزمره و هر چیزی که خودت مطمئن و کامل بلدی)، مستقیماً پاسخ نهایی و کامل را همین الان و فقط به زبان فارسی روان و محاوره‌ای بنویس. " +
+          "هرگز کاربر را به جستجوی خودش، مراجعه به گوگل یا خواندن منبع دیگری حواله نده؛ اگر می‌دانی، خودت کامل جواب بده."
+      },
+      ...recentHistoryForModel(),
+      { role: "user", content: userText }
+    ];
+
+    const firstPass = await callHF(decisionMessages);
+    const cleaned = firstPass.trim();
+    const normalized = cleaned.replace(/[.!؟?،,\s]+$/, "");
+
+    if(
+      normalized === SEARCH_MARKER ||
+      normalized.toUpperCase().includes(SEARCH_MARKER) ||
+      looksLikeDecisionLeak(cleaned)
+    ){
+      return { needsSearch: true };
+    }
+    return { needsSearch: false, answer: firstPass };
+  }
+
+  /* ---------------- Stage 1: تحقیق واقعی در اینترنت ---------------- */
+  async function callWebSearch(query){
+    let res;
+    const searchUrl = CONFIG.searchEndpoint + "?q=" + encodeURIComponent(query);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+
+    try{
+      res = await fetch(searchUrl, { method: "GET", signal: controller.signal });
+    }catch(networkErr){
+      if(networkErr && networkErr.name === "AbortError"){
+        throw new Error("سرویس جستجو پاسخ نداد.");
+      }
+      const e = new Error("اتصال به سرویس جستجو برقرار نشد. اینترنت خود را بررسی کنید.");
+      e.isNetwork = true;
+      throw e;
+    }finally{
+      clearTimeout(timeout);
+    }
+
+    if(!res.ok){
+      throw new Error("سرویس جستجو با خطا مواجه شد (کد " + res.status + ").");
+    }
+
+    const data = await res.json();
+    if(data.error){
+      throw new Error(data.error);
+    }
+    const results = Array.isArray(data.results) ? data.results : [];
+    return results.slice(0, CONFIG.searchResultCount).map(r => ({
+      title: r.title || "",
+      snippet: r.snippet || "",
+      link: r.link || ""
+    }));
+  }
+
+  /* ---------------- Stage 2: پاسخ نهایی با استفاده از نتایج تحقیق ---------------- */
+  async function callFinalAnswer(userText, searchResults){
+    let contextBlock = "هیچ نتیجه‌ی جستجویی یافت نشد؛ از دانش عمومی خودت استفاده کن.";
+    if(searchResults.length > 0){
+      contextBlock = searchResults.map((r, i) =>
+        `${i+1}. عنوان: ${r.title}\n   خلاصه: ${r.snippet}\n   منبع: ${r.link}`
+      ).join("\n\n");
+    }
+
+    const messagesPayload = [
+      {
+        role: "system",
+        content: CONFIG.systemPrompt +
+          " قبل از پاسخ، نتایج تحقیق اینترنتی زیر در اختیارت قرار گرفته؛ از آن‌ها برای دقیق و به‌روز بودن پاسخ استفاده کن. " +
+          "پاسخ نهایی باید طبیعی و مستقیم باشد و متن نتایج جستجو را عیناً کپی نکن، بلکه با کلمات خودت خلاصه و بازنویسی کن. " +
+          "اگر لازم است به منبع اشاره کنی، فقط نام سایت را ذکر کن. " +
+          "قانون بسیار مهم: هرگز کاربر را به خواندن منبع یا مراجعه به سایت یا لینک حواله نده و هرگز نگو «خودتان ببینید»، «برای اطلاعات بیشتر به لینک مراجعه کنید» یا جملاتی شبیه به این. " +
+          "وظیفه‌ی تو این است که خودت، همین‌جا، جواب واقعی و کامل سؤال را با استفاده از اطلاعات نتایج تحقیق بنویسی؛ اسم منبع فقط یک اطلاعات جانبی اختیاری در انتهای پاسخ است، نه جایگزین پاسخ."
+      },
+      ...recentHistoryForModel(),
+      {
+        role: "user",
+        content: `نتایج تحقیق اینترنتی:\n${contextBlock}\n\nسؤال کاربر: ${userText}\n\nحالا با استفاده از اطلاعات بالا، پاسخ نهایی، کامل، مستقیم و روان را فقط به زبان فارسی بنویس. کاربر را به جایی حواله نده؛ خودت جواب را کامل بده.`
+      }
+    ];
+
+    return callHF(messagesPayload);
+  }
+
+  /* ---------------- Textarea auto-resize ---------------- */
+  function autoResize(){
+    messageInput.style.height = "auto";
+    messageInput.style.height = Math.min(messageInput.scrollHeight, 160) + "px";
+  }
+
+  /* ---------------- AFK logic ---------------- */
+  let afkTimer;
+  const AFK_TIMEOUT = 60000;
+  const afkOverlay = document.getElementById("afkOverlay");
+
+  function resetAFK(){
+    clearTimeout(afkTimer);
+    if(afkOverlay.style.display === "flex"){
+      afkOverlay.style.display = "none";
+      if(!isBusy){
+        statusDot.className = "status-dot";
+        statusText.textContent = "آماده";
+      } else {
+        setBusyStatus(true);
+      }
+    }
+    afkTimer = setTimeout(goAFK, AFK_TIMEOUT);
+  }
+
+  function goAFK(){
+    afkOverlay.style.display = "flex";
+    statusDot.className = "status-dot busy";
+    statusText.textContent = "در حال استراحت (AFK)";
+  }
+
+  /* ---------------- Events ---------------- */
+  function bindEvents(){
+    sendBtn.addEventListener("click", handleSend);
+    attachBtn.addEventListener("click", onAttachPick);
+    attachInput.addEventListener("change", () => {
+      const file = attachInput.files && attachInput.files[0];
+      onAttachFileSelected(file);
+    });
+    messageInput.addEventListener("keydown", (e) => {
+      if(e.key === "Enter" && !e.shiftKey){
+        e.preventDefault();
+        handleSend();
+      }
+    });
+    messageInput.addEventListener("input", autoResize);
+    messageInput.addEventListener("focus", () => keyboardSpace.classList.add("expanded"));
+    messageInput.addEventListener("blur", () => keyboardSpace.classList.remove("expanded"));
+
+    voiceModeBtn.addEventListener("click", openVoiceMode);
+    voiceCloseBtn.addEventListener("click", closeVoiceMode);
+
+    newChatBtn.addEventListener("click", newConversation);
+    deleteConvBtn.addEventListener("click", () => {
+      // گفتگوی خالی (هنوز پیامی ندارد) چیزی برای حذف ندارد
+      if(!currentConv || currentConv.messages.length === 0) return;
+      deleteConversation(currentConv.id);
+    });
+    themeToggleBtn.addEventListener("click", toggleTheme);
+    sidebarToggleBtn.addEventListener("click", toggleSidebar);
+    sidebarBackdrop.addEventListener("click", closeSidebar);
+
+    // کلیک روی دکمه‌ی کپیِ بلوک کد و روی چیپ‌های پیشنهادی (event delegation، چون این‌ها پویا ساخته می‌شوند)
+    chatInnerEl.addEventListener("click", (e) => {
+      const copyBtn = e.target.closest(".code-copy-btn");
+      if(copyBtn){
+        const block = copyBtn.closest(".code-block");
+        const codeEl = block ? block.querySelector("code") : null;
+        if(codeEl){
+          copyTextToClipboard(codeEl.textContent).then(() => {
+            const label = copyBtn.querySelector(".code-copy-label");
+            const original = label ? label.textContent : null;
+            copyBtn.classList.add("copied");
+            if(label) label.textContent = "کپی شد!";
+            setTimeout(() => {
+              copyBtn.classList.remove("copied");
+              if(label && original) label.textContent = original;
+            }, 1500);
+          });
+        }
+        return;
+      }
+      const chip = e.target.closest(".suggestion-chip");
+      if(chip){
+        messageInput.value = chip.dataset.text;
+        autoResize();
+        messageInput.focus();
+      }
+    });
+
+    // AFK events
+    window.addEventListener("mousemove", resetAFK);
+    window.addEventListener("keydown", resetAFK);
+    window.addEventListener("scroll", resetAFK);
+    window.addEventListener("touchstart", resetAFK);
+    window.addEventListener("click", resetAFK);
+    resetAFK();
+  }
+
+  init();
+})();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch((err) => {
+      console.warn("Service worker registration failed:", err);
+    });
+  });
+}
+</script>
+</body>
+</html>
