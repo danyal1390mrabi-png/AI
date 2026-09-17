@@ -46,13 +46,23 @@ self.addEventListener("fetch", (event) => {
 
   // فقط درخواست‌های GET قابل کش هستن؛ بقیه (مثل POST به API) مستقیم به شبکه می‌رن
   if (req.method !== "GET") {
-    event.respondWith(fetch(req));
+    event.respondWith(
+      fetch(req).catch((err) => {
+        console.warn("SW: non-GET fetch failed:", err);
+        throw err; // خطا به صفحه پاس داده میشه، فقط دیگه Unhandled Rejection نیست
+      })
+    );
     return;
   }
 
   // درخواست‌های هوش مصنوعی و جستجو هرگز کش نمی‌شن؛ همیشه تازه از شبکه گرفته می‌شن
   if (NO_CACHE_HOSTS.includes(url.hostname)) {
-    event.respondWith(fetch(req));
+    event.respondWith(
+      fetch(req).catch((err) => {
+        console.warn("SW: no-cache host fetch failed:", err);
+        throw err;
+      })
+    );
     return;
   }
 
