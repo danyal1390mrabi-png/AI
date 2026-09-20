@@ -88,9 +88,6 @@
     transition:background .2s ease, color .2s ease;
   }
 
-  /* ---------- Top bar ---------- */
-  .top-bar{ width:100%; height:1cm; background:var(--sidebar-bg); flex-shrink:0; }
-
   /* ---------- Page switch (سوییچ بین صفحات هوش مصنوعی) ---------- */
   .page-switch{ padding:2px 12px 8px; display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
   .page-switch-label{ font-size:11px; color:var(--text-3); padding:0 2px; }
@@ -422,13 +419,6 @@
   .voice-close-btn:hover{ background:var(--surface-hover); }
   .voice-close-btn svg{ width:22px; height:22px; }
 
-  /* ---------- Keyboard spacer ---------- */
-  .keyboard-space{
-    width:100%; height:0; min-height:0; flex-shrink:0; background:transparent;
-    transition:height .25s ease, min-height .25s ease;
-  }
-  .keyboard-space.expanded{ height:34vh; min-height:220px; }
-
   /* ---------- VPN badge ---------- */
   .vpn-badge{
     position:fixed; bottom:14px; left:14px; z-index:50;
@@ -504,12 +494,12 @@
   /* ---------- Mobile: sidebar becomes an off-canvas overlay ---------- */
   @media (max-width:768px){
     .sidebar{
-      position:fixed; top:1cm; bottom:0; right:0; width:280px; z-index:210;
+      position:fixed; top:0; bottom:0; right:0; width:280px; z-index:210;
       box-shadow:-8px 0 24px rgba(0,0,0,.35); transform:translateX(0); transition:transform .25s ease;
     }
     body.sidebar-closed .sidebar{ width:280px; transform:translateX(100%); border:none; }
     .sidebar-backdrop{
-      display:none; position:fixed; inset:1cm 0 0 0; background:rgba(0,0,0,.5); z-index:200;
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200;
     }
     body:not(.sidebar-closed) .sidebar-backdrop{ display:block; }
     .conv-title{ font-size:13px; }
@@ -517,8 +507,6 @@
 </style>
 </head>
 <body class="sidebar-closed">
-
-<div class="top-bar"></div>
 
 <div class="app-shell">
   <aside class="sidebar" id="sidebar">
@@ -586,8 +574,6 @@
     </div>
   </div>
 </div>
-
-<div class="keyboard-space" id="keyboardSpace"></div>
 
 <div id="afkOverlay">
   <div class="afk-icon">🌙</div>
@@ -734,9 +720,7 @@
   let pendingAttachment = null; // { file, kind: 'image'|'file', thumb? }
 
 
-  /* =========================================================
-     تنظیمات احراز هویت (ورود / ثبت‌نام با نام کاربری و رمز عبور)
-     ========================================================= */
+  /* ---------------- Auth: ورود / ثبت‌نام با نام کاربری و رمز عبور ---------------- */
   const AUTH_ENDPOINT = "https://apiw.danyalcode.ir";
   const LS_TOKEN = "danyalcode_ai_session_token";
   const LS_USERNAME = "danyalcode_ai_session_username";
@@ -774,7 +758,6 @@
   const attachPreviewRow = document.getElementById("attachPreviewRow");
   const statusDot = document.getElementById("statusDot");
   const statusText = document.getElementById("statusText");
-  const keyboardSpace = document.getElementById("keyboardSpace");
   const voiceModeBtn = document.getElementById("voiceModeBtn");
   const voiceOverlay = document.getElementById("voiceOverlay");
   const voiceOrb = document.getElementById("voiceOrb");
@@ -2477,8 +2460,6 @@
       }
     });
     messageInput.addEventListener("input", autoResize);
-    messageInput.addEventListener("focus", () => keyboardSpace.classList.add("expanded"));
-    messageInput.addEventListener("blur", () => keyboardSpace.classList.remove("expanded"));
 
     voiceModeBtn.addEventListener("click", openVoiceMode);
     voiceCloseBtn.addEventListener("click", closeVoiceMode);
