@@ -7,7 +7,6 @@
 <meta name="description" content="دستیار چت هوش مصنوعی فارسی - دستیار نارنجی">
 
 <script>
-// جلوگیری از پرش تم هنگام بارگذاری صفحه: تم ذخیره‌شده را قبل از رندر اعمال می‌کنیم
 (function(){
   try{
     var t = localStorage.getItem("danyalcode_ai_theme");
@@ -87,9 +86,6 @@
     overflow:hidden;
     transition:background .2s ease, color .2s ease;
   }
-
-  /* ---------- Top bar ---------- */
-  .top-bar{ width:100%; height:1cm; background:var(--sidebar-bg); flex-shrink:0; }
 
   /* ---------- Page switch (سوییچ بین صفحات هوش مصنوعی) ---------- */
   .page-switch{ padding:2px 12px 8px; display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
@@ -422,13 +418,6 @@
   .voice-close-btn:hover{ background:var(--surface-hover); }
   .voice-close-btn svg{ width:22px; height:22px; }
 
-  /* ---------- Keyboard spacer ---------- */
-  .keyboard-space{
-    width:100%; height:0; min-height:0; flex-shrink:0; background:transparent;
-    transition:height .25s ease, min-height .25s ease;
-  }
-  .keyboard-space.expanded{ height:34vh; min-height:220px; }
-
   /* ---------- VPN badge ---------- */
   .vpn-badge{
     position:fixed; bottom:14px; left:14px; z-index:50;
@@ -464,12 +453,12 @@
   /* ---------- Mobile: sidebar becomes an off-canvas overlay ---------- */
   @media (max-width:768px){
     .sidebar{
-      position:fixed; top:1cm; bottom:0; right:0; width:280px; z-index:210;
+      position:fixed; top:0; bottom:0; right:0; width:280px; z-index:210;
       box-shadow:-8px 0 24px rgba(0,0,0,.35); transform:translateX(0); transition:transform .25s ease;
     }
     body.sidebar-closed .sidebar{ width:280px; transform:translateX(100%); border:none; }
     .sidebar-backdrop{
-      display:none; position:fixed; inset:1cm 0 0 0; background:rgba(0,0,0,.5); z-index:200;
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200;
     }
     body:not(.sidebar-closed) .sidebar-backdrop{ display:block; }
     .conv-title{ font-size:13px; }
@@ -477,8 +466,6 @@
 </style>
 </head>
 <body class="sidebar-closed">
-
-<div class="top-bar"></div>
 
 <div class="app-shell">
   <aside class="sidebar" id="sidebar">
@@ -547,8 +534,6 @@
   </div>
 </div>
 
-<div class="keyboard-space" id="keyboardSpace"></div>
-
 <div id="afkOverlay">
   <div class="afk-icon">🌙</div>
   <h2>حالت استراحت (AFK)</h2>
@@ -575,11 +560,6 @@
 (function(){
   "use strict";
 
-  /* =========================================================
-     منوی بالای صفحه
-     برای تغییر نام یا ترتیب صفحات، فقط همین لیست را ویرایش کنید.
-     "href" باید دقیقاً نام فایل صفحه‌ی موردنظر باشد.
-     ========================================================= */
   const PAGE_MENU = [
     { label: "رفتن به دستیار کمک قوی",     href: "index.html" },
     { label: "رفتن به دستیار همیار",    href: "page2.html" },
@@ -587,7 +567,7 @@
     { label: "دستیار دانیال", href: "page4.html" },
     { label: "رفتن به دستیار ناز",  href: "page5.html" }
   ];
-  const CURRENT_PAGE = "page4.html"; // نام فایل همین صفحه
+  const CURRENT_PAGE = "page4.html";
 
   function renderTopMenu(){
     const box = document.getElementById("pageSwitch");
@@ -598,10 +578,6 @@
     }).join("");
     box.innerHTML = `<div class="page-switch-label">تغییر هوش مصنوعی</div>${links}`;
   }
-
-  /* =========================================================
-     تنظیمات اتصال به هوش مصنوعی + جستجوی اینترنتی
-     ========================================================= */
 
   const CONFIG = {
     endpoint: "https://apis.danyalcode.ir/",
@@ -614,13 +590,12 @@
    #وقتی دوست شدی چه میکنی 
    بهاش حرف دوستانه میزنی و بهش کمک های زیادی میکنی`,
 
+
+
     searchEndpoint: "https://super-sound-5676.danyal1390mrabi.workers.dev/",
     searchResultCount: 5
   };
 
-  /* =========================================================
-     تنظیمات پیوست (عکس / فایل)
-     ========================================================= */
   const ATTACH_IMAGE_TYPES = { "image/jpeg":1, "image/jpg":1, "image/png":1, "image/webp":1 };
   const ATTACH_IMAGE_EXTS = { jpg:1, jpeg:1, png:1, webp:1 };
   const ATTACH_FILE_TYPES = {
@@ -636,23 +611,16 @@
   const ATTACH_MAX_IMAGE_BYTES = 6 * 1024 * 1024;
   const ATTACH_MAX_FILE_BYTES = 8 * 1024 * 1024;
 
-  let pendingAttachment = null; // { file, kind: 'image'|'file', thumb? }
+  let pendingAttachment = null;
 
-
-  /* ---------------- Storage keys ----------------
-     هر دستیار (هر صفحه) حافظه‌ی گفتگوی جداگانه‌ی خودش را دارد؛
-     به همین دلیل کلیدهای ذخیره‌سازی بر اساس CURRENT_PAGE نام‌گذاری می‌شوند
-     تا گفتگوهای دستیارهای مختلف با هم قاطی نشوند. */
   const LS_CONVS   = "danyalcode_ai_conversations_v2__" + CURRENT_PAGE;
   const LS_THEME   = "danyalcode_ai_theme";
-  const LS_CHAT_OLD = "danyalcode_ai_chat_history"; // فقط برای مهاجرتِ نسخه‌ی خیلی قدیمی‌تر (تک‌گفتگویی)
+  const LS_CHAT_OLD = "danyalcode_ai_chat_history";
 
-  /* ---------------- State ---------------- */
-  let conversations = [];   // گفتگوهای ذخیره‌شده‌ی این دستیار (برای نمایش در منوی گفتگوها)
-  let currentConv = null;   // گفتگوی فعال؛ تا وقتی پیامی ثبت نشده، در «conversations» ذخیره نمی‌شود
+  let conversations = [];
+  let currentConv = null;
   let isBusy = false;
 
-  /* ---------------- DOM refs ---------------- */
   const sidebarEl = document.getElementById("sidebar");
   const sidebarBackdrop = document.getElementById("sidebarBackdrop");
   const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
@@ -672,7 +640,6 @@
   const attachPreviewRow = document.getElementById("attachPreviewRow");
   const statusDot = document.getElementById("statusDot");
   const statusText = document.getElementById("statusText");
-  const keyboardSpace = document.getElementById("keyboardSpace");
   const voiceModeBtn = document.getElementById("voiceModeBtn");
   const voiceOverlay = document.getElementById("voiceOverlay");
   const voiceOrb = document.getElementById("voiceOrb");
@@ -680,7 +647,6 @@
   const voiceTranscriptEl = document.getElementById("voiceTranscript");
   const voiceCloseBtn = document.getElementById("voiceCloseBtn");
 
-  /* ---------------- Icons ---------------- */
   const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
   const COPY_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -688,7 +654,6 @@
   const SUN_ICON   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
   const MOON_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
 
-  /* ---------------- Init ---------------- */
   function init(){
     renderTopMenu();
     loadConversations();
@@ -707,7 +672,6 @@
     }
   }
 
-  /* ---------------- Conversations: persistence ---------------- */
   function genId(){
     return "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
@@ -731,10 +695,8 @@
     }catch(e){ conversations = []; }
     if(!Array.isArray(conversations)) conversations = [];
 
-    // هرگز گفتگوی خالی را در تاریخچه نگه نمی‌داریم (پاک‌سازی داده‌های احتمالاً خراب/قدیمی)
     conversations = conversations.filter(c => c && Array.isArray(c.messages) && c.messages.length > 0);
 
-    // مهاجرت از نسخه‌ی خیلی قدیمی‌تر (تک‌گفتگویی) — فقط یک‌بار و فقط برای صفحه‌ی اصلی
     if(CURRENT_PAGE === "index.html" && conversations.length === 0){
       try{
         const oldRaw = localStorage.getItem(LS_CHAT_OLD);
@@ -755,9 +717,6 @@
     }
 
     saveConversations();
-
-    // هر بار که این دستیار باز می‌شود، همیشه با یک صفحه‌ی گفتگوی خالی و تازه شروع می‌کنیم؛
-    // گفتگوهای قبلی حذف نمی‌شوند و در منوی «گفتگوها»ی همین دستیار باقی می‌مانند.
     currentConv = createEmptyConv();
   }
 
@@ -812,7 +771,6 @@
     if(role === "user" && conv.title === "گفتگوی جدید"){
       conv.title = deriveTitle(conv.messages);
     }
-    // اولین پیام این گفتگو ثبت شد؛ از این به بعد در تاریخچه (منوی گفتگوها) نمایش داده شود
     if(!conversations.some(c => c.id === conv.id)){
       conversations.push(conv);
     }
@@ -820,7 +778,6 @@
     return m;
   }
 
-  /* ---------------- Sidebar / responsive ---------------- */
   function isMobile(){ return window.innerWidth <= 768; }
 
   function initSidebarResponsiveState(){
@@ -865,7 +822,6 @@
     convTitleEl.textContent = getCurrentConv().title || "گفتگوی جدید";
   }
 
-  /* ---------------- Theme ---------------- */
   function applyTheme(theme){
     document.documentElement.setAttribute("data-theme", theme);
     try{ localStorage.setItem(LS_THEME, theme); }catch(e){}
@@ -881,7 +837,6 @@
     const icon = theme === "dark" ? SUN_ICON : MOON_ICON;
     themeToggleLabel.textContent = theme === "dark" ? "تم روشن" : "تم تاریک";
     themeToggleBtn.innerHTML = icon + '<span id="themeToggleLabel">' + themeToggleLabel.textContent + "</span>";
-    // بازتعریف مرجع، چون innerHTML بازنویسی شد
     window.__themeLabelEl = themeToggleBtn.querySelector("#themeToggleLabel");
   }
   function initTheme(){
@@ -889,7 +844,6 @@
     updateThemeToggleUI(current);
   }
 
-  /* ---------------- Status pill ---------------- */
   function setBusyStatus(busy){
     isBusy = busy;
     sendBtn.disabled = busy;
@@ -907,7 +861,6 @@
     statusText.textContent = msg || "خطا در اتصال";
   }
 
-  /* ---------------- Markdown rendering (safe: escape first, then convert) ---------------- */
   function escapeHtml(str){
     return String(str)
       .replace(/&/g, "&amp;")
@@ -919,31 +872,25 @@
     if(!raw) return "";
     let text = escapeHtml(raw).replace(/\r\n/g, "\n");
 
-    // بلوک کد ```lang\n...``` — زبان و کد را جدا نگه می‌داریم تا هدر بلوک کد را بسازیم
     const codeBlocks = [];
     text = text.replace(/```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g, (m, lang, code) => {
       codeBlocks.push({ lang: (lang || "").trim(), code: code.replace(/\n$/, "") });
       return `\n\n\u0000CODEBLOCK${codeBlocks.length - 1}\u0000\n\n`;
     });
 
-    // کد درون‌خطی `code`
     text = text.replace(/`([^`\n]+)`/g, '<code class="md-inline-code">$1</code>');
 
-    // تیترها
     text = text.replace(/^#{3,6}\s+(.+)$/gm, '\n\n<h4 class="md-h">$1</h4>\n\n');
     text = text.replace(/^##\s+(.+)$/gm, '\n\n<h3 class="md-h">$1</h3>\n\n');
     text = text.replace(/^#\s+(.+)$/gm, '\n\n<h2 class="md-h">$1</h2>\n\n');
 
-    // پررنگ و مورب
     text = text.replace(/\*\*([^\*\n]+)\*\*/g, "<strong>$1</strong>");
     text = text.replace(/__([^_\n]+)__/g, "<strong>$1</strong>");
     text = text.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
 
-    // لینک [متن](url)
     text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
       '<a class="md-link" href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
 
-    // فهرست‌های بدون‌شماره
     text = text.replace(/(?:^|\n)((?:[ \t]*[-*•][ \t]+.+(?:\n|$))+)/g, (m, block) => {
       const items = block.trim().split("\n")
         .map(l => l.replace(/^[ \t]*[-*•][ \t]+/, "").trim())
@@ -951,7 +898,6 @@
       return `\n\n<ul class="md-list">${items}</ul>\n\n`;
     });
 
-    // فهرست‌های شماره‌دار
     text = text.replace(/(?:^|\n)((?:[ \t]*\d+[.)][ \t]+.+(?:\n|$))+)/g, (m, block) => {
       const items = block.trim().split("\n")
         .map(l => l.replace(/^[ \t]*\d+[.)][ \t]+/, "").trim())
@@ -959,7 +905,6 @@
       return `\n\n<ol class="md-list">${items}</ol>\n\n`;
     });
 
-    // پاراگراف‌بندی بر اساس خط خالی
     const blocks = text.split(/\n{2,}/);
     text = blocks.map(b => {
       const t = b.trim();
@@ -969,7 +914,6 @@
       return `<p class="md-p">${t.replace(/\n/g, "<br>")}</p>`;
     }).join("");
 
-    // برگرداندن بلوک‌های کد به‌صورت جعبه‌ی هدردار با دکمه‌ی کپی (مثل چت‌جی‌پی‌تی)
     text = text.replace(/\u0000CODEBLOCK(\d+)\u0000/g, (m, i) => {
       const block = codeBlocks[Number(i)];
       const langLabel = block.lang || "متن";
@@ -979,7 +923,6 @@
     return text;
   }
 
-  /* ---------------- Clipboard helper ---------------- */
   function copyTextToClipboard(text){
     if(navigator.clipboard && navigator.clipboard.writeText){
       return navigator.clipboard.writeText(text);
@@ -997,7 +940,6 @@
     });
   }
 
-  /* ---------------- Chat rendering ---------------- */
   function formatTime(ts){
     if(!ts) return "";
     return new Date(ts).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" });
@@ -1119,7 +1061,6 @@
     scrollChatToBottom();
   }
 
-  // یک ردیف موقتِ «در حال تایپ» شبیه چت‌جی‌پی‌تی، مستقل از آرایه‌ی پیام‌ها
   function addTypingIndicator(){
     const block = document.createElement("div");
     block.className = "msg-block assistant";
@@ -1148,7 +1089,6 @@
     if(el) el.remove();
   }
 
-  /* ---------------- ضدِ ارجاع‌دادن کاربر به جای دیگر ---------------- */
   const REFERRAL_PATTERNS = [
     /خودت(ان)?\s*(جست ?وجو|سرچ|search)/i,
     /در\s*گوگل\s*(جست ?وجو|سرچ)/i,
@@ -1180,7 +1120,6 @@
     return callHF(fixMessages);
   }
 
-  /* ---------------- Chat send logic ---------------- */
   function recentHistoryForModel(){
     return getCurrentConv().messages
       .filter(m => m.role === "user" || m.role === "assistant")
@@ -1188,7 +1127,6 @@
       .map(m => ({ role: m.role, content: m.content }));
   }
 
-  /* ---------------- پیوست عکس/فایل ---------------- */
   function formatBytes(n){
     if(n < 1024) return n + " B";
     if(n < 1024*1024) return Math.round(n/1024) + " KB";
@@ -1319,7 +1257,6 @@
     attachPreviewRow.appendChild(chip);
   }
 
-  /* ---------------- تولید عکس واقعی (استفاده از اکشن image که در Worker موجود است) ---------------- */
   function detectImageGenIntent(text){
     if(!text) return null;
     const t = text.trim();
@@ -1327,7 +1264,6 @@
     const enMatch = t.match(/^(?:please\s+)?(?:generate|draw|create|make|paint)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture|photo|drawing|painting|illustration)\s*(?:of|for|about|showing)?\s*[:\-]?\s*(.*)$/i);
     if(enMatch) return (enMatch[1] || t).trim() || t;
 
-    // تشخیص و استخراج بر اساس واحد کلمه (نه substring) تا کلمات فارسی به‌اشتباه بریده نشوند
     const imgWordSet = new Set(["عکس","تصویر","نقاشی","طرح","پوستر","لوگو"]);
     const singleVerbSet = new Set(["بساز","بسازی","بکش","بکشی"]);
     const twoWordVerbs = [["تولید","کن"], ["درست","کن"], ["طراحی","کن"], ["ایجاد","کن"]];
@@ -1356,9 +1292,6 @@
     return subject || t;
   }
 
-  // مطمئن می‌شود هر مقداری (رشته، Error، آبجکت خطای Cloudflare و ...) به یک متن
-  // خوانا تبدیل شود؛ هرگز اجازه نمی‌دهد یک آبجکت مستقیم داخل new Error() یا
-  // یک پیام کاربر قرار بگیرد و به‌صورت "[object Object]" نمایش داده شود.
   function safeErrText(v){
     if(!v) return "";
     if(typeof v === "string") return v;
@@ -1543,7 +1476,6 @@
     }
   }
 
-  /* ---------------- منطق مشترک تولید پاسخ (هم برای چت متنی، هم حالت صوتی) ---------------- */
   async function getAssistantReply(text, onStatus){
     const notify = typeof onStatus === "function" ? onStatus : function(){};
     const decision = await decideAndRespond(text);
@@ -1563,15 +1495,12 @@
       try{
         const fixed = await forceDirectAnswer(text, reply);
         if(fixed && !isReferral(fixed)) reply = fixed;
-      }catch(e){ /* اگر اصلاح شکست خورد، همان پاسخ اول نمایش داده می‌شود */ }
+      }catch(e){ }
     }
 
     return reply;
   }
 
-  /* =========================================================
-     حالت مکالمه صوتی (Voice Mode): میکروفون خودکار + خواندن پاسخ
-     ========================================================= */
   let voiceRecognition = null;
   let voiceModeActive = false;
   let availableVoices = [];
@@ -1669,7 +1598,7 @@
 
     voiceRecognition.onerror = (event) => {
       if(event.error === "no-speech" || event.error === "aborted"){
-        return; // در onend دوباره تلاش می‌شود
+        return;
       }
       if(event.error === "not-allowed" || event.error === "service-not-allowed"){
         setVoiceStatus("⚠️ دسترسی به میکروفون رد شد. لطفاً اجازه دسترسی بدهید.");
@@ -1751,7 +1680,6 @@
     voiceOverlay.classList.remove("active");
   }
 
-  /* ---------------- Helper: یک تماس خام با Hugging Face (بدون منطق جستجو) ---------------- */
   async function callHF(messagesPayload){
     const payload = {
       max_tokens: CONFIG.maxTokens,
@@ -1814,7 +1742,6 @@
     return String(content).trim();
   }
 
-  /* ---------------- ارسال عکس/فایل پیوست‌شده (multipart/form-data) ---------------- */
   async function callAttachmentAI(messagesPayload, attachment){
     const form = new FormData();
     form.append("action", "chat");
@@ -1873,7 +1800,6 @@
     return String(content).trim();
   }
 
-  /* ---------------- تشخیص نیاز به جستجو + پاسخ مستقیم اگر نیازی نبود ---------------- */
   const SEARCH_MARKER = "NEED_SEARCH";
 
   const FORCE_SEARCH_KEYWORDS = [
@@ -2087,7 +2013,6 @@
     return { needsSearch: false, answer: firstPass };
   }
 
-  /* ---------------- Stage 1: تحقیق واقعی در اینترنت ---------------- */
   async function callWebSearch(query){
     let res;
     const searchUrl = CONFIG.searchEndpoint + "?q=" + encodeURIComponent(query);
@@ -2124,7 +2049,6 @@
     }));
   }
 
-  /* ---------------- Stage 2: پاسخ نهایی با استفاده از نتایج تحقیق ---------------- */
   async function callFinalAnswer(userText, searchResults){
     let contextBlock = "هیچ نتیجه‌ی جستجویی یافت نشد؛ از دانش عمومی خودت استفاده کن.";
     if(searchResults.length > 0){
@@ -2153,13 +2077,11 @@
     return callHF(messagesPayload);
   }
 
-  /* ---------------- Textarea auto-resize ---------------- */
   function autoResize(){
     messageInput.style.height = "auto";
     messageInput.style.height = Math.min(messageInput.scrollHeight, 160) + "px";
   }
 
-  /* ---------------- AFK logic ---------------- */
   let afkTimer;
   const AFK_TIMEOUT = 60000;
   const afkOverlay = document.getElementById("afkOverlay");
@@ -2184,7 +2106,6 @@
     statusText.textContent = "در حال استراحت (AFK)";
   }
 
-  /* ---------------- Events ---------------- */
   function bindEvents(){
     sendBtn.addEventListener("click", handleSend);
     attachBtn.addEventListener("click", onAttachPick);
@@ -2199,15 +2120,12 @@
       }
     });
     messageInput.addEventListener("input", autoResize);
-    messageInput.addEventListener("focus", () => keyboardSpace.classList.add("expanded"));
-    messageInput.addEventListener("blur", () => keyboardSpace.classList.remove("expanded"));
 
     voiceModeBtn.addEventListener("click", openVoiceMode);
     voiceCloseBtn.addEventListener("click", closeVoiceMode);
 
     newChatBtn.addEventListener("click", newConversation);
     deleteConvBtn.addEventListener("click", () => {
-      // گفتگوی خالی (هنوز پیامی ندارد) چیزی برای حذف ندارد
       if(!currentConv || currentConv.messages.length === 0) return;
       deleteConversation(currentConv.id);
     });
@@ -2215,7 +2133,6 @@
     sidebarToggleBtn.addEventListener("click", toggleSidebar);
     sidebarBackdrop.addEventListener("click", closeSidebar);
 
-    // کلیک روی دکمه‌ی کپیِ بلوک کد و روی چیپ‌های پیشنهادی (event delegation، چون این‌ها پویا ساخته می‌شوند)
     chatInnerEl.addEventListener("click", (e) => {
       const copyBtn = e.target.closest(".code-copy-btn");
       if(copyBtn){
@@ -2243,7 +2160,6 @@
       }
     });
 
-    // AFK events
     window.addEventListener("mousemove", resetAFK);
     window.addEventListener("keydown", resetAFK);
     window.addEventListener("scroll", resetAFK);
